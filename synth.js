@@ -78,7 +78,9 @@
     ctx = new (window.AudioContext || window.webkitAudioContext)();
     const c = ctx;
 
-    g.bus = gain(1);       // Faust output (voices + HPF + chorus, stereo)
+    // Faust output (voices + HPF + chorus, stereo). +12 dB makeup gain: one
+    // note peaked around -24 dBFS, too quiet; the limiter catches big chords.
+    g.bus = gain(4);
     g.level = gain(1);
     g.volume = gain(0.5);
     g.limiter = c.createDynamicsCompressor();
