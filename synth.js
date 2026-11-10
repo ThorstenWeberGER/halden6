@@ -72,6 +72,8 @@
     g.level.connect(g.dl); g.level.connect(g.dr);
     g.chWet.connect(g.volume);
     g.volume.connect(g.limiter).connect(c.destination);
+    g.analyser = c.createAnalyser(); g.analyser.fftSize = 2048; // feeds the live scope
+    g.limiter.connect(g.analyser);
 
     // Global modulation sources
     g.pitch = c.createConstantSource();   // cents: tune + pitch wheel
@@ -342,6 +344,13 @@
   window.Synth = {
     start, noteOn, noteOff, trigger, panic, setParam, format, params: P,
     now: () => (ctx ? ctx.currentTime : 0),
+    analyser: () => g.analyser || null,
+    // Value mappings, shared with the graphs so they show what you hear
+    map: {
+      attack, decay, release, cutoff, hpfHz, lfoRateHz,
+      pulseWidth: () => (P.dcoPwmMod === 0 ? 0.5 : 0.5 - P.dcoPwm * 0.45),
+      resQ: () => -3 + P.vcfRes * 27,
+    },
     state: () => (ctx ? ctx.state : 'off'),
   };
 })();

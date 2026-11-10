@@ -18,6 +18,14 @@ Click once anywhere to start audio, then play with the mouse or the keyboard.
 
 Works fully offline: fonts are bundled in `fonts/` (SIL Open Font License).
 
+## Graphs
+
+DCO, LFO, VCF and ENV each show a small live graph of what their controls do:
+the oscillator mix, two seconds of LFO (with the delay fade-in), the real
+filter curve (lowpass, resonance and HPF together) and the envelope shape.
+The Arpeggiator bar shows the live output wave. Trace colour follows the
+section colour: red in Studio, orange in Neon, green in Daylight.
+
 ## Arpeggiator
 
 Click the **Arpeggiator** bar between the panel and the keys to fold it open.
@@ -61,6 +69,7 @@ them on the clipboard to paste straight into the chat.
 |---|---|
 | `panel.js` | Every section and control. Add or move a control here. |
 | `synth.js` | Web Audio sound engine. |
+| `viz.js` | Section graphs and the live output scope. |
 | `arp.js` | Arpeggiator: clock, modes, recording, pattern editor, slots. |
 | `ui.js` | Rendering, input, keyboard, comment mode. |
 | `styles.css` | Look, layout and skins. |

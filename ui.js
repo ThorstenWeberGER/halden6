@@ -35,6 +35,7 @@
     S.setParam(id, value);
     controlIndex[id].render();
     if (window.Arp) Arp.paramChanged(id);
+    if (window.Viz) Viz.update();
     if (id === 'lfoTempo' && controlIndex.lfoRate) controlIndex.lfoRate.render();
     clearTimeout(savePatchTimer);
     savePatchTimer = setTimeout(() => {
@@ -310,6 +311,13 @@
       head.dataset.cid = s.id;
       const body = el('div', 'module-body');
       if (s.custom === 'pattern') window.Arp.renderPattern(body);
+      if (s.graph) {
+        const names = { wave: 'Waveform', lfo: 'LFO shape', filter: 'Filter curve', env: 'Envelope' };
+        const scr = window.Viz.create(s.graph, names[s.graph]);
+        scr.dataset.cid = s.id + 'Graph';
+        controlIndex[s.id + 'Graph'] = { def: { label: names[s.graph] + ' graph' }, section: s, render() {} };
+        body.append(scr);
+      }
       let groupBox = null;
       s.controls.forEach(c => {
         const built = builders[c.type](c);
@@ -468,6 +476,7 @@
     document.documentElement.dataset.skin = name;
     document.querySelectorAll('.skin-btn').forEach(b => b.setAttribute('aria-pressed', b.dataset.skin === name));
     store.set('juno-skin-v1', name);
+    if (window.Viz) Viz.update();
   }
   document.querySelectorAll('.skin-btn').forEach(b => b.addEventListener('click', () => setSkin(b.dataset.skin)));
   setSkin(document.documentElement.dataset.skin || 'studio');
@@ -668,5 +677,8 @@
   renderNotes();
   updateAudioStatus();
   openArp(store.get('juno-arp-open-v1', false));
+  // live scope in the arpeggiator bar
+  $('#arp-toggle').insertBefore(Viz.create('scope', ''), $('#arp-toggle .arp-chevron'));
+  Viz.init();
   Arp.updateHandle();
 })();

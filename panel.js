@@ -15,6 +15,7 @@
 //
 // Rows 1 and 2 are the main panel; rows 'arp1' and 'arp2' live in the
 // fold-out arpeggiator. A section with `custom` is drawn by its own code.
+// `graph` adds a live graph at the top of the section (see viz.js).
 //
 // Controls next to each other with the same `group` stay side by side.
 
@@ -35,7 +36,7 @@ window.PANEL = [
     ],
   },
   {
-    id: 'lfo', title: 'LFO', accent: 'red', row: 1,
+    id: 'lfo', title: 'LFO', accent: 'red', row: 1, graph: 'lfo',
     controls: [
       { id: 'lfoRate', type: 'slider', label: 'Rate', value: 0.45 },
       { id: 'lfoDelay', type: 'slider', label: 'Delay Time', value: 0 },
@@ -45,7 +46,7 @@ window.PANEL = [
     ],
   },
   {
-    id: 'dco', title: 'DCO', accent: 'red', row: 1,
+    id: 'dco', title: 'DCO', accent: 'red', row: 1, graph: 'wave',
     controls: [
       { id: 'dcoLfo', type: 'slider', label: 'LFO', value: 0 },
       { id: 'dcoPwm', type: 'slider', label: 'PWM', value: 0.3 },
@@ -77,7 +78,7 @@ window.PANEL = [
     ],
   },
   {
-    id: 'vcf', title: 'VCF', accent: 'red', row: 2,
+    id: 'vcf', title: 'VCF', accent: 'red', row: 2, graph: 'filter',
     controls: [
       { id: 'vcfFreq', type: 'slider', label: 'Freq', value: 0.62 },
       { id: 'vcfRes', type: 'slider', label: 'Res', value: 0.15 },
@@ -95,7 +96,7 @@ window.PANEL = [
     ],
   },
   {
-    id: 'env', title: 'ENV', accent: 'red', row: 2,
+    id: 'env', title: 'ENV', accent: 'red', row: 2, graph: 'env',
     controls: [
       { id: 'envA', type: 'slider', label: 'A', value: 0.05 },
       { id: 'envD', type: 'slider', label: 'D', value: 0.45 },
