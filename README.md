@@ -1,7 +1,18 @@
-# Halden 6: analog poly synth mock UI
+![Halden 6: a modern Juno-style poly synth in the browser. Six voices, the Juno-60 chorus, 100 presets, a 16-step arpeggiator and three skins, on a panel that scales to any screen](docs/hero-banner.png)
 
-A browser mock of the panel in `reference/original-panel.png`, with a working
-sound engine and a comment mode for discussing changes with Claude.
+# Halden 6: a modern Juno-style poly synth for the browser
+
+## Why I built this
+
+I love synths. What I missed was a modern Juno experience: the simple, warm
+voice and that chorus, on a panel that scales from a laptop to a studio
+monitor, with an arpeggiator built right in. I couldn't find one, so I built it.
+
+Halden 6 is one HTML page with a real sound engine behind it: six voices, a
+Moog-style ladder filter and the Juno-60 chorus, written in Faust and compiled
+to WebAssembly. No install, no server, no account.
+
+![The full Halden 6 panel in the Studio skin with the preset "PWM String Pad" loaded: Control, Chorus, LFO and DCO on the top row; Performance, HPF, VCF, VCA and ENV on the second row; the folded Arpeggiator bar and the keyboard below](docs/images/panel.png)
 
 ## Run it
 
@@ -25,31 +36,24 @@ cd Halden6 && python3 -m http.server 8000     # then open http://localhost:8000
 
 Works fully offline: fonts are bundled in `fonts/` (SIL Open Font License).
 
-## Presets
+## One panel for every screen
 
-100 factory sounds in 10 categories (Bass, Lead, Pad, Keys, Brass, Strings,
-Pluck, Bell, Arp, FX) across about 50 styles, from Synthpop, Italo and Acid to
-Synthwave, Lo-fi, Trap, Future Bass and Cinematic. Use the arrows next to the
-preset name in the top bar, or click the name to search and filter the library.
-A `*` after the name means you changed the sound since loading it. Presets
-change the sound only; arpeggiator, tempo and volume stay. All presets live
-in `presets.js` in real units (Hz, seconds), so they are easy to edit.
+The panel is laid out like hardware: one faceplate, sections split by hairlines.
+Sizes grow with the window, so faders and labels stay readable on a 27-inch
+monitor and still fit a laptop. On narrow screens the sections wrap into more
+rows instead of shrinking to nothing.
 
-## Backdrop
+![The same panel at three window sizes: 2560 × 1440 on a studio monitor, 1440 × 900 on a laptop, and 820 × 1180 on a tablet, where the sections wrap into more rows](docs/images/scaling.png)
 
-Behind the main panel sits a faint octagon tile grid under soft club
-lighting, with a few tiles glowing slowly in the skin's colours. It is drawn
-in `backdrop.js`; each skin sets its colours and strength with the `--bd-*`
-tokens in `styles.css`. Tiles stop pulsing when the system asks for reduced
-motion.
-
-## Graphs
+## See what every control does
 
 DCO, LFO, VCF and ENV each show a small live graph of what their controls do:
 the oscillator mix, two seconds of LFO (with the delay fade-in), the real
 filter curve (lowpass, resonance and HPF together) and the envelope shape.
 The Arpeggiator bar shows the live output wave. Trace colour follows the
 section colour: red in Studio, orange in Neon, green in Daylight.
+
+![Close-ups of the DCO, ENV, LFO and VCF sections with the preset "Synthwave Lead": saw plus pulse waveform, an envelope with 20 ms attack, a 4 Hz sine LFO with a 600 ms delay fade-in, and a 2.2 kHz filter curve with a resonance peak](docs/images/graphs.png)
 
 ## Arpeggiator
 
@@ -72,11 +76,33 @@ Switch **On**, then choose a mode:
 - **Slots**: pick one of 8 slots, type a name, **Save**. **Load** brings back the
   pattern with its BPM and rate. Slots and the current pattern survive a reload.
 
+![The open arpeggiator in Pattern mode with the factory pattern "Italo Octaves" at 118 BPM: Arp, Clock and Arp Mode sections on top, and the 16-step editor with note, velocity, gate and tie per step](docs/images/arpeggiator.png)
+
+## Presets
+
+100 factory sounds in 10 categories (Bass, Lead, Pad, Keys, Brass, Strings,
+Pluck, Bell, Arp, FX) across about 50 styles, from Synthpop, Italo and Acid to
+Synthwave, Lo-fi, Trap, Future Bass and Cinematic. Use the arrows next to the
+preset name in the top bar, or click the name to search and filter the library.
+A `*` after the name means you changed the sound since loading it. Presets
+change the sound only; arpeggiator, tempo and volume stay. All presets live
+in `presets.js` in real units (Hz, seconds), so they are easy to edit.
+
+![The preset library open on the left with search, category filters and the list of presets; "092 Berlin Sequence" is loaded and shown in the top bar](docs/images/presets.png)
+
 ## Skins
 
 Switch with **Studio / Neon / Daylight** in the top bar; the choice is remembered.
 A skin is a block of colour tokens in `styles.css` under `[data-skin="..."]`.
 To add one, copy the Neon block, change the values, and add a button in `index.html`.
+
+![The panel in the three skins side by side: Studio with a dark faceplate and red sections, Neon in violet and orange, Daylight as a light panel with green traces](docs/images/skins.png)
+
+Behind the main panel sits a faint octagon tile grid under soft club
+lighting, with a few tiles glowing slowly in the skin's colours. It is drawn
+in `backdrop.js`; each skin sets its colours and strength with the `--bd-*`
+tokens in `styles.css`. Tiles stop pulsing when the system asks for reduced
+motion.
 
 ## Discuss changes with Claude
 
@@ -103,9 +129,23 @@ them on the clipboard to paste straight into the chat.
 | `ui.js` | Rendering, input, keyboard, comment mode. |
 | `styles.css` | Look, layout and skins. |
 | `fonts/` | Bundled font files and their licences. |
+| `docs/` | README images and the script that renders them. |
 
 Plain HTML, CSS and JavaScript with no build step, so Electron or Tauri can
 wrap it as a desktop app later.
+
+### Refresh the README images
+
+Every picture above is a screenshot of the real `index.html`, taken by
+Playwright. After a UI change, run:
+
+```
+pip install playwright && playwright install chromium   # once
+python docs/render_images.py
+```
+
+It writes `docs/images/*.png` and `docs/hero-banner.png` (the banner layout is
+`docs/hero-banner.html`).
 
 ## Interpretations to confirm
 
@@ -116,3 +156,8 @@ These are not clear from the reference image and are open for discussion:
 - **ML / G-ML**: one note at a time; G-ML adds an 80 ms glide. Each new note restarts the envelope (no true legato yet).
 - **Pitch wheel section** is labelled "Performance"; the bend faders are
   "Bend DCO" (up to 12 semitones) and "Bend VCF".
+
+---
+
+Halden 6 is an independent project and not affiliated with Roland. Juno and
+Juno-60 are trademarks of Roland Corporation.

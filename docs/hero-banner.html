@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Halden 6 hero banner</title>
+<!--
+  Source for docs/hero-banner.png. Regenerate with:
+      python docs/render_images.py
+  (renders this file at 1200x420 CSS px, 2x scale -> 2400x840 PNG)
+
+  Message: a modern Juno-style poly synth that runs in the browser, with a panel
+  that scales to any screen and an arpeggiator built in. The right side is the
+  real UI (images/panel.png), not a mock-up. Colours are the synth's own Studio
+  skin: red = sound path, blue = control, cream = button caps.
+-->
+<link rel="stylesheet" href="../fonts/fonts.css">
+<style>
+  :root {
+    --ground: #0b0d10;
+    --ink: #e4e6ea;
+    --ink-soft: #a7afbd;
+    --line: #2a2f37;
+    --red: #d4553f;
+    --red-soft: #f08a73;
+    --blue: #4f9bd6;
+    --cream: #ebe3c6;
+    --lcd: #8fe3b0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1200px; height: 420px; }
+  body {
+    font-family: "Inter", "Segoe UI", sans-serif;
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    background:
+      radial-gradient(620px 420px at 80% 46%, rgba(212,85,63,.26) 0%, rgba(212,85,63,0) 66%),
+      radial-gradient(460px 300px at 98% 100%, rgba(79,155,214,.18) 0%, rgba(79,155,214,0) 70%),
+      radial-gradient(520px 360px at 4% 8%, rgba(235,227,198,.06) 0%, rgba(235,227,198,0) 70%),
+      linear-gradient(135deg, #07090c 0%, #0b0d10 55%, #12100f 100%);
+  }
+  .banner {
+    width: 1200px; height: 420px; position: relative; overflow: hidden;
+    display: grid; grid-template-columns: 540px 1fr; align-items: center;
+    padding-left: 60px;
+  }
+  /* faint octagon tiles, like the backdrop behind the real panel */
+  .banner::before {
+    content: ""; position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Cpath d='M13 2h18l11 11v18L31 42H13L2 31V13z' fill='none' stroke='%23e4e6ea' stroke-opacity='.07'/%3E%3C/svg%3E");
+    mask-image: linear-gradient(100deg, rgba(0,0,0,.9) 0%, rgba(0,0,0,0) 48%);
+    -webkit-mask-image: linear-gradient(100deg, rgba(0,0,0,.9) 0%, rgba(0,0,0,0) 48%);
+  }
+  .copy { position: relative; z-index: 2; max-width: 500px; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 9px;
+    font-family: "Barlow Condensed", sans-serif; font-weight: 700;
+    font-size: 14px; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--red-soft);
+    background: linear-gradient(90deg, rgba(212,85,63,.18), rgba(212,85,63,.04));
+    border: 1px solid rgba(212,85,63,.45);
+    border-radius: 999px; padding: 6px 15px 6px 11px; margin-bottom: 18px;
+  }
+  .eyebrow .led { width: 7px; height: 7px; border-radius: 50%; background: #ff4a36; box-shadow: 0 0 9px #ff4a36; }
+  h1 {
+    font-family: "Barlow Condensed", sans-serif; font-weight: 700;
+    font-size: 78px; line-height: .92; letter-spacing: .2em; color: #f5f3ee;
+    text-shadow: 0 0 34px rgba(212,85,63,.25);
+  }
+  h1 span { color: var(--red); }
+  .tagline { margin-top: 14px; font-size: 25px; line-height: 1.25; font-weight: 500; color: var(--ink); letter-spacing: -.2px; }
+  .tagline em { font-style: normal; color: var(--cream); }
+  .sub { margin-top: 12px; font-size: 16px; line-height: 1.45; color: var(--ink-soft); max-width: 460px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 20px; }
+  .chip {
+    font-family: "JetBrains Mono", monospace; font-size: 12.5px; color: var(--ink);
+    border: 1px solid var(--line); background: rgba(22,25,30,.85);
+    border-radius: 6px; padding: 5px 9px;
+  }
+  .chip b { color: var(--lcd); font-weight: 600; }
+
+  .stage { position: relative; height: 420px; perspective: 1500px; z-index: 1; }
+  .panel {
+    position: absolute; left: 70px; top: 30px; width: 700px;
+    transform: rotateY(-17deg) rotateX(5deg) rotateZ(-1deg);
+    transform-origin: 0% 50%;
+    border-radius: 10px; overflow: hidden;
+    border: 1px solid rgba(255,255,255,.08);
+    box-shadow: 0 40px 90px rgba(0,0,0,.7), 0 0 70px rgba(212,85,63,.22);
+    mask-image: linear-gradient(180deg, #000 70%, rgba(0,0,0,0) 100%);
+    -webkit-mask-image: linear-gradient(180deg, #000 70%, rgba(0,0,0,0) 100%);
+  }
+  .panel img { display: block; width: 100%; }
+</style>
+</head>
+<body>
+  <div class="banner">
+    <div class="copy">
+      <div class="eyebrow"><span class="led"></span>Poly synth in the browser</div>
+      <h1>HALDEN <span>6</span></h1>
+      <p class="tagline">A modern <em>Juno-style</em> synth that scales to any screen.</p>
+      <p class="sub">Six analog-style voices, the Juno-60 chorus, and a step arpeggiator built into the panel. Open one HTML file and play.</p>
+      <div class="chips">
+        <span class="chip"><b>6</b> voices</span>
+        <span class="chip"><b>100</b> presets</span>
+        <span class="chip"><b>16</b>-step arp</span>
+        <span class="chip"><b>3</b> skins</span>
+      </div>
+    </div>
+    <div class="stage">
+      <div class="panel"><img src="images/panel.png" alt=""></div>
+    </div>
+  </div>
+</body>
+</html>
