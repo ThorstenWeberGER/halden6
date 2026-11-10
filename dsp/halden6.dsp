@@ -1,4 +1,4 @@
-// Juno voice, written in Faust. One instance per voice; faustwasm runs six.
+// Halden 6 voice, written in Faust. One instance per voice; faustwasm runs six.
 // Every building block comes from the Faust standard libraries:
 //   os.sawtooth / os.pulsetrain / os.square  band-limited oscillators (no aliasing)
 //   ve.moogLadder                             4-pole ladder filter model (STK-4.3 licence)
@@ -8,7 +8,7 @@
 // the mapping from fader positions, so the UI graphs and the sound agree.
 // After editing, rebuild with:  node dsp/build.mjs   (see dsp/README.md)
 
-declare name "juno";
+declare name "halden6";
 import("stdfaust.lib");
 
 // set by the polyphony layer for each note

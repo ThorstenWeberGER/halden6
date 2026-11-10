@@ -43,7 +43,7 @@
   // [name, category, genre, overrides]
   const LIST = [
     // ---------- Bass ----------
-    ['Juno Sub Bass', 'Bass', 'Synthpop', { saw: 0, pulse: 1, pwm: 0, sub: 1, subLvl: 0.8, cut: 400, env: 0.25, D: 0.3, S: 0.6, R: 0.1, ch: 0, mono: 'ml', kybd: 0.3 }],
+    ['Halden Sub Bass', 'Bass', 'Synthpop', { saw: 0, pulse: 1, pwm: 0, sub: 1, subLvl: 0.8, cut: 400, env: 0.25, D: 0.3, S: 0.6, R: 0.1, ch: 0, mono: 'ml', kybd: 0.3 }],
     ['Italo Octave Bass', 'Bass', 'Italo Disco', { sub: 1, cut: 600, res: 0.3, env: 0.45, D: 0.18, S: 0.2, R: 0.08, ch: 0 }],
     ['Hi-NRG Pluck Bass', 'Bass', 'Hi-NRG', { cut: 350, res: 0.35, env: 0.55, D: 0.14, S: 0.1, R: 0.06, ch: 0 }],
     ['Acid Squelch', 'Bass', 'Acid House', { cut: 250, res: 0.82, env: 0.6, D: 0.25, S: 0.05, R: 0.05, mono: 'gml', kybd: 0.3, ch: 0, velo: 0.6 }],
@@ -63,7 +63,7 @@
     ['Trance Offbeat Bass', 'Bass', 'Trance', { cut: 500, res: 0.3, env: 0.45, D: 0.12, S: 0.1, R: 0.06, hpf: 40, ch: 0 }],
 
     // ---------- Lead ----------
-    ['Juno Square Lead', 'Lead', 'Synthpop', { saw: 0, pulse: 1, pwm: 0, cut: 2500, res: 0.2, env: 0.2, A: 0.01, D: 0.4, S: 0.8, R: 0.25, vib: 0.25, rate: 5.5, delay: 0.4, mono: 'gml' }],
+    ['Halden Square Lead', 'Lead', 'Synthpop', { saw: 0, pulse: 1, pwm: 0, cut: 2500, res: 0.2, env: 0.2, A: 0.01, D: 0.4, S: 0.8, R: 0.25, vib: 0.25, rate: 5.5, delay: 0.4, mono: 'gml' }],
     ['PWM Solo', 'Lead', 'New Wave', { saw: 0, pulse: 1, pwm: 0.5, pwmMod: true, rate: 4.5, vib: 0.15, delay: 0.5, cut: 3000, res: 0.15, S: 0.8, mono: 'gml' }],
     ['Screaming Lead', 'Lead', 'Rock', { pulse: 1, pwm: 0.7, pwmMod: true, pwmSrc: 'env', cut: 1500, res: 0.6, env: 0.5, D: 0.5, S: 0.6, R: 0.2, mono: 'ml', ch: 0 }],
     ['Synthwave Lead', 'Lead', 'Synthwave', { pulse: 1, pwm: 0.3, pwmMod: true, cut: 2200, res: 0.25, env: 0.3, A: 0.02, D: 0.6, S: 0.7, R: 0.4, vib: 0.2, delay: 0.6, ch: 3, mono: 'gml' }],
@@ -80,7 +80,7 @@
     ['Mellow Sine Lead', 'Lead', 'Jazz Fusion', { saw: 0, pulse: 1, pwm: 0, cut: 600, res: 0, kybd: 1, env: 0.05, A: 0.05, D: 1, S: 0.9, R: 0.5, vib: 0.15, delay: 0.8, mono: 'gml' }],
 
     // ---------- Pad ----------
-    ['Classic Juno Pad', 'Pad', 'Synthpop', { cut: 1400, env: 0.15, A: 0.6, D: 1.5, S: 0.8, R: 1.5 }],
+    ['Classic Halden Pad', 'Pad', 'Synthpop', { cut: 1400, env: 0.15, A: 0.6, D: 1.5, S: 0.8, R: 1.5 }],
     ['PWM String Pad', 'Pad', '80s Pop', { saw: 0, pulse: 1, pwm: 0.6, pwmMod: true, rate: 0.8, cut: 2500, res: 0.05, env: 0.1, A: 0.8, D: 2, S: 0.9, R: 1.8, ch: 2 }],
     ['Synthwave Sunset Pad', 'Pad', 'Synthwave', { pulse: 1, pwm: 0.4, pwmMod: true, rate: 0.5, cut: 1800, res: 0.2, env: 0.2, A: 1, D: 2, S: 0.8, R: 2.5, ch: 3 }],
     ['Ambient Drift', 'Pad', 'Ambient', { noise: 0.1, cut: 900, res: 0.3, env: 0, flfo: 0.3, rate: 0.15, wave: 'tri', A: 2.5, D: 3, S: 0.9, R: 4, ch: 3 }],
@@ -98,7 +98,7 @@
     ['Choir Pad', 'Pad', 'Cinematic', { saw: 0, pulse: 1, pwm: 0.3, pwmMod: true, noise: 0.05, cut: 1600, res: 0.25, env: 0, A: 0.9, S: 0.9, R: 2, hpf: 150, vib: 0.06, ch: 3 }],
 
     // ---------- Keys ----------
-    ['Juno Piano', 'Keys', 'Pop', { pulse: 1, pwm: 0.2, cut: 1600, res: 0.05, env: 0.35, A: 0.002, D: 1.2, S: 0.1, R: 0.5, velo: 0.6, kybd: 0.7 }],
+    ['Halden Piano', 'Keys', 'Pop', { pulse: 1, pwm: 0.2, cut: 1600, res: 0.05, env: 0.35, A: 0.002, D: 1.2, S: 0.1, R: 0.5, velo: 0.6, kybd: 0.7 }],
     ['House Organ', 'Keys', 'House', { saw: 0, pulse: 1, pwm: 0, sub: 1, cut: 5000, env: 0, S: 1, R: 0.05, gate: true }],
     ['Electric Piano', 'Keys', 'Neo Soul', { saw: 0, pulse: 1, pwm: 0.1, cut: 1200, res: 0, env: 0.3, A: 0.002, D: 1.6, S: 0.2, R: 0.6, velo: 0.7, vib: 0.05, rate: 5, ch: 2 }],
     ['Funk Clavinet', 'Keys', 'Funk', { saw: 0, pulse: 1, pwm: 0.75, cut: 2000, res: 0.3, env: 0.4, A: 0.001, D: 0.25, S: 0.1, R: 0.08, velo: 0.7, hpf: 150, ch: 0 }],
@@ -110,7 +110,7 @@
     ['Gospel Organ', 'Keys', 'Gospel', { saw: 0, pulse: 1, pwm: 0, sub: 1, subLvl: 0.4, cut: 3500, env: 0, A: 0.005, S: 1, R: 0.1, gate: true, vib: 0.1, rate: 6, ch: 3 }],
 
     // ---------- Brass ----------
-    ['Juno Brass', 'Brass', 'Synthpop', { cut: 700, res: 0.15, env: 0.5, A: 0.06, D: 0.5, S: 0.7, R: 0.25, kybd: 0.6, velo: 0.4 }],
+    ['Halden Brass', 'Brass', 'Synthpop', { cut: 700, res: 0.15, env: 0.5, A: 0.06, D: 0.5, S: 0.7, R: 0.25, kybd: 0.6, velo: 0.4 }],
     ['Jump Brass', 'Brass', '80s Rock', { cut: 800, res: 0.1, env: 0.5, A: 0.03, D: 0.35, S: 0.7, R: 0.2 }],
     ['Soft Horn', 'Brass', 'Cinematic', { cut: 500, res: 0.05, env: 0.35, A: 0.15, D: 0.8, S: 0.7, R: 0.4, vib: 0.1, delay: 0.6 }],
     ['Brass Swell', 'Brass', 'Synthwave', { pulse: 1, pwm: 0.3, cut: 400, res: 0.2, env: 0.55, A: 0.4, D: 1.2, S: 0.8, R: 0.5, ch: 3 }],
@@ -141,7 +141,7 @@
     ['Bubble Pluck', 'Pluck', 'Electro', { saw: 0, pulse: 1, pwm: 0.5, cut: 300, res: 0.85, env: 0.5, D: 0.12, S: 0, R: 0.1, ch: 0 }],
 
     // ---------- Bell ----------
-    ['Juno Bell', 'Bell', 'Synthpop', { saw: 0, pulse: 1, pwm: 0.85, cut: 4000, res: 0.5, env: 0.2, A: 0.001, D: 1.5, S: 0, R: 1.5, hpf: 300, ch: 2 }],
+    ['Halden Bell', 'Bell', 'Synthpop', { saw: 0, pulse: 1, pwm: 0.85, cut: 4000, res: 0.5, env: 0.2, A: 0.001, D: 1.5, S: 0, R: 1.5, hpf: 300, ch: 2 }],
     ['Music Box', 'Bell', 'Lullaby', { saw: 0, pulse: 1, pwm: 0.9, cut: 6000, res: 0.3, env: 0, A: 0.001, D: 0.9, S: 0, R: 0.9, hpf: 500, kybd: 1 }],
     ['Glass Bell', 'Bell', 'Ambient', { saw: 0, pulse: 1, pwm: 0.8, cut: 5000, res: 0.6, env: 0.2, A: 0.001, D: 2.5, S: 0, R: 2.5, ch: 3 }],
     ['Chime Pad', 'Bell', 'New Age', { saw: 0, pulse: 1, pwm: 0.85, noise: 0.05, cut: 3000, res: 0.4, env: 0, A: 0.002, D: 3, S: 0.2, R: 3, hpf: 200, ch: 3 }],

@@ -1,7 +1,7 @@
 {
-  "name": "juno-dsp-build",
+  "name": "halden6-dsp-build",
   "private": true,
-  "description": "Builds the Faust sound engine for the Juno UI. Only needed after editing juno.dsp.",
+  "description": "Builds the Faust sound engine for the Halden 6 UI. Only needed after editing halden6.dsp.",
   "type": "module",
   "scripts": { "build": "node build.mjs" },
   "devDependencies": { "@grame/faustwasm": "0.20.1" }

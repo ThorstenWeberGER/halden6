@@ -14,13 +14,19 @@
 
   // ---------- storage (best effort: the UI works without it) ----------
   const store = {
-    get(key, fallback) { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch (e) { return fallback; } },
+    // Falls back to the key from before the rename (juno-*), so saved notes, patterns and patches survive
+    get(key, fallback) {
+      try {
+        const v = localStorage.getItem(key) ?? localStorage.getItem(key.replace(/^halden6-/, 'juno-'));
+        return v ? JSON.parse(v) : fallback;
+      } catch (e) { return fallback; }
+    },
     set(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {} },
   };
 
   const controlIndex = {}; // id -> { def, section, node, render }
   const defaults = {};
-  const saved = store.get('juno-patch-v1', {});
+  const saved = store.get('halden6-patch-v1', {});
   window.PANEL.forEach(s => s.controls.forEach(c => {
     if ('value' in c) {
       defaults[c.id] = c.value;
@@ -46,7 +52,7 @@
     savePatchTimer = setTimeout(() => {
       const patch = {};
       Object.keys(defaults).forEach(k => { if (k !== 'pitchWheel') patch[k] = S.params[k]; });
-      store.set('juno-patch-v1', patch);
+      store.set('halden6-patch-v1', patch);
     }, 300);
   }
 
@@ -418,7 +424,7 @@
     arpPanel.classList.toggle('open', open);
     arpPanel.inert = !open;
     arpToggle.setAttribute('aria-expanded', open);
-    store.set('juno-arp-open-v1', open);
+    store.set('halden6-arp-open-v1', open);
   }
   arpToggle.addEventListener('click', () => { if (!commentMode) openArp(!arpPanel.classList.contains('open')); });
   function setArpHandle(text, lit, rec) {
@@ -476,7 +482,7 @@
   new ResizeObserver(() => buildKeyboard()).observe(kb);
 
   // ---------- presets ----------
-  const savedPreset = store.get('juno-preset-v1', null);
+  const savedPreset = store.get('halden6-preset-v1', null);
   currentPreset = savedPreset ? window.PRESETS.find(p => p.num === savedPreset.num) || null : null;
   presetEdited = !!(savedPreset && savedPreset.edited);
   let presetCat = 'All', presetQuery = '';
@@ -486,7 +492,7 @@
     $('#preset-label').textContent = currentPreset ? currentPreset.name + (presetEdited ? ' *' : '') : 'Your patch';
     $('#preset-meta').textContent = currentPreset ? `${currentPreset.cat} · ${currentPreset.genre}` : '';
     $('#preset-open').title = presetEdited ? 'Edited since loading (*). Open the preset library' : 'Open the preset library';
-    store.set('juno-preset-v1', currentPreset ? { num: currentPreset.num, edited: presetEdited } : null);
+    store.set('halden6-preset-v1', currentPreset ? { num: currentPreset.num, edited: presetEdited } : null);
     document.querySelectorAll('.preset-row').forEach(r => r.classList.toggle('active', currentPreset && +r.dataset.num === currentPreset.num));
   };
 
@@ -551,7 +557,7 @@
   function setSkin(name) {
     document.documentElement.dataset.skin = name;
     document.querySelectorAll('.skin-btn').forEach(b => b.setAttribute('aria-pressed', b.dataset.skin === name));
-    store.set('juno-skin-v1', name);
+    store.set('halden6-skin-v1', name);
     if (window.Viz) Viz.update();
   }
   document.querySelectorAll('.skin-btn').forEach(b => b.addEventListener('click', () => setSkin(b.dataset.skin)));
@@ -567,12 +573,12 @@
   }
   const unlock = () => { S.start(); setTimeout(updateAudioStatus, 100); };
   window.addEventListener('pointerdown', unlock, { once: true });
-  window.addEventListener('juno-ready', updateAudioStatus);
+  window.addEventListener('halden6-ready', updateAudioStatus);
   window.addEventListener('keydown', unlock, { once: true });
 
   // ---------- comment mode ----------
-  let notes = store.get('juno-notes-v1', []);
-  const saveNotes = () => { store.set('juno-notes-v1', notes); renderNotes(); };
+  let notes = store.get('halden6-notes-v1', []);
+  const saveNotes = () => { store.set('halden6-notes-v1', notes); renderNotes(); };
   const labelFor = id => {
     const c = controlIndex[id];
     if (!c) return id;
@@ -695,7 +701,7 @@
   }
 
   function toMarkdown() {
-    const lines = ['# Juno UI notes', '', `Exported: ${new Date().toLocaleString()}`, `Skin: ${document.documentElement.dataset.skin}`, '', '## Notes', ''];
+    const lines = ['# Halden 6 UI notes', '', `Exported: ${new Date().toLocaleString()}`, `Skin: ${document.documentElement.dataset.skin}`, '', '## Notes', ''];
     if (!notes.length) lines.push('_No notes._');
     notes.forEach(n => {
       lines.push(`- **${n.label}**${n.value ? ` (was ${n.value})` : ''}: ${n.text.replace(/\n+/g, ' ')}`);
@@ -714,7 +720,7 @@
       try {
         if (!fileHandle) {
           fileHandle = await window.showSaveFilePicker({
-            suggestedName: 'juno-notes.md',
+            suggestedName: 'halden6-notes.md',
             types: [{ description: 'Markdown', accept: { 'text/markdown': ['.md'] } }],
           });
         }
@@ -729,10 +735,10 @@
     }
     const a = el('a');
     a.href = URL.createObjectURL(new Blob([md], { type: 'text/markdown' }));
-    a.download = 'juno-notes.md';
+    a.download = 'halden6-notes.md';
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    toast('Downloaded juno-notes.md. Move it to Juno/notes/');
+    toast('Downloaded halden6-notes.md. Move it to Halden6/notes/');
   });
   $('#notes-copy').addEventListener('click', async () => {
     try { await navigator.clipboard.writeText(toMarkdown()); toast('Copied. Paste it into the chat with Claude.'); }
@@ -753,7 +759,7 @@
   notesReady = true;
   renderNotes();
   updateAudioStatus();
-  openArp(store.get('juno-arp-open-v1', false));
+  openArp(store.get('halden6-arp-open-v1', false));
   // live scope in the arpeggiator bar
   $('#arp-toggle').insertBefore(Viz.create('scope', ''), $('#arp-toggle .arp-chevron'));
   Viz.init();

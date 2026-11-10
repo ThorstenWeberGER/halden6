@@ -1,5 +1,5 @@
 // Sound engine.
-// Voices: the Faust program in dsp/juno.dsp, compiled to WebAssembly and run
+// Voices: the Faust program in dsp/halden6.dsp, compiled to WebAssembly and run
 // by faustwasm (vendor/faustwasm.js) with six-voice polyphony. Band-limited
 // oscillators, PWM, a Moog ladder filter, envelopes and LFO all come from the
 // Faust standard libraries.
@@ -38,7 +38,7 @@
     : expMap(P.lfoRate, 0.1, 20);
   const ladderQ = () => 0.707 + P.vcfRes * P.vcfRes * 22;
 
-  // Faust control values, in the units juno.dsp expects
+  // Faust control values, in the units halden6.dsp expects
   function dspValues() {
     return {
       pitchCents: P.tune * 100 + P.pitchWheel * P.bendDco * 1200,
@@ -64,7 +64,7 @@
     if (!faust) return;
     const vals = dspValues();
     for (const k in vals) {
-      if (sent[k] !== vals[k]) { faust.setParamValue('/juno/' + k, vals[k]); sent[k] = vals[k]; }
+      if (sent[k] !== vals[k]) { faust.setParamValue('/halden6/' + k, vals[k]); sent[k] = vals[k]; }
     }
   }
 
@@ -98,11 +98,11 @@
   // Compile the embedded WebAssembly and create the polyphonic Faust node
   async function loadFaust() {
     try {
-      const D = window.JUNO_DSP;
+      const D = window.HALDEN_DSP;
       const bytes = b64 => Uint8Array.from(atob(b64), ch => ch.charCodeAt(0));
       const [dspModule, mixerModule, effectModule] = await Promise.all([D.dsp, D.mixer, D.effect].map(b => WebAssembly.compile(bytes(b))));
       const gen = new window.FaustWasm.FaustPolyDspGenerator();
-      const make = useScriptProcessor => gen.createNode(ctx, MAX_VOICES, 'juno',
+      const make = useScriptProcessor => gen.createNode(ctx, MAX_VOICES, 'halden6',
         { module: dspModule, json: JSON.stringify(D.meta), soundfiles: {} }, mixerModule,
         { module: effectModule, json: JSON.stringify(D.effectMeta), soundfiles: {} }, useScriptProcessor, 1024);
       // AudioWorklet (own audio thread) needs the page served over http(s) or
@@ -117,9 +117,9 @@
       pushDsp();
       const queued = pending; pending = [];
       queued.forEach(fn => fn());
-      window.dispatchEvent(new Event('juno-ready'));
+      window.dispatchEvent(new Event('halden6-ready'));
     } catch (e) {
-      console.error('Juno: sound engine failed to load', e);
+      console.error('Halden 6: sound engine failed to load', e);
     }
   }
 

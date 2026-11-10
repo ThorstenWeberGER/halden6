@@ -1,4 +1,4 @@
-# Juno: analog poly synth mock UI
+# Halden 6: analog poly synth mock UI
 
 A browser mock of the panel in `reference/original-panel.png`, with a working
 sound engine and a comment mode for discussing changes with Claude.
@@ -12,7 +12,7 @@ For the lowest latency, serve the folder instead (the sound engine then runs on
 its own audio thread):
 
 ```
-cd Juno && python3 -m http.server 8000     # then open http://localhost:8000
+cd Halden6 && python3 -m http.server 8000     # then open http://localhost:8000
 ```
 
 | Input | Action |
@@ -73,7 +73,7 @@ To add one, copy the Neon block, change the values, and add a button in `index.h
 ## Discuss changes with Claude
 
 1. Click **Comment mode**, then click any control or section header and type a note.
-2. Click **Notes**, then **Save notes file**, and save as `Juno/notes/juno-notes.md`.
+2. Click **Notes**, then **Save notes file**, and save as `Halden6/notes/halden6-notes.md`.
 3. Tell Claude to read the notes. The file lists each note, the control's value
    at the time, and the full patch.
 

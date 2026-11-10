@@ -83,8 +83,8 @@
 
   // ---------- persistence ----------
   const copyPattern = p => ({ length: p.length, steps: p.steps.map(s => ({ ...s })) });
-  const savePattern = () => api.store.set('juno-arp-pattern-v1', pat);
-  const saveSlots = () => api.store.set('juno-arp-slots-v1', slots);
+  const savePattern = () => api.store.set('halden6-arp-pattern-v1', pat);
+  const saveSlots = () => api.store.set('halden6-arp-slots-v1', slots);
 
   // ---------- engine ----------
   function startClock() {
@@ -454,9 +454,9 @@
 
   function init(helpers) {
     api = helpers;
-    const savedPat = api.store.get('juno-arp-pattern-v1', null);
+    const savedPat = api.store.get('halden6-arp-pattern-v1', null);
     pat = savedPat && Array.isArray(savedPat.steps) && savedPat.steps.length === MAX_STEPS ? savedPat : copyPattern(EXAMPLE);
-    const savedSlots = api.store.get('juno-arp-slots-v1', null);
+    const savedSlots = api.store.get('halden6-arp-slots-v1', null);
     slots = Array.isArray(savedSlots) && savedSlots.length === 8 ? savedSlots : Array(8).fill(null);
     updateHandle();
   }
