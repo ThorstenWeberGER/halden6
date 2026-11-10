@@ -295,6 +295,7 @@
 
   // ---------- render rack ----------
   const rack = $('#rack');
+  window.Tattoo.mount(rack); // artwork behind the main panel
   const arpRack = $('#arp-rack');
   const mainEl = document.querySelector('main');
   let notesReady = false;
@@ -567,7 +568,7 @@
   function updateAudioStatus() {
     const st = S.state(), pill = $('#audio-status');
     const on = st === 'running';
-    pill.textContent = on ? 'Audio on' : st === 'loading' ? 'Loading sound…' : 'Audio off · click anywhere';
+    pill.textContent = on ? 'Audio on' : st === 'loading' ? 'Starting audio…' : 'Audio off · click anywhere';
     pill.classList.toggle('pill-live', on);
     pill.classList.toggle('pill-muted', !on);
   }

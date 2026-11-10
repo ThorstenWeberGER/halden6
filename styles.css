@@ -21,6 +21,11 @@
   --led: #ff4a36;
   --lcd: #8fe3b0;
   --note: #a98bf5;        /* everything that belongs to comment mode */
+  --tat-line: #e4e6ea;    /* tattoo artwork behind the panel */
+  --tat-fill: #d4553f;
+  --tat-fill-2: #ebe3c6;
+  --tat-opacity: 0.11;
+  --tat-text: #d4553f;
 
   /* type */
   --font-label: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
@@ -141,23 +146,45 @@ main {
 .skin-btn[aria-pressed="true"] { background: var(--plate-hi); color: var(--ink); box-shadow: inset 0 -2px 0 var(--red); }
 
 /* ---------- faceplate ---------- */
-/* Rows and sections sit on a line-coloured ground with 1px gaps,
-   so the hairlines stay correct however the sections wrap. */
+/* The faceplate colour sits on the rack itself; sections are transparent so
+   the tattoo artwork (tattoo.js) shows through behind every control.
+   Hairlines between sections are outlines, which fill the 1px gaps however
+   the sections wrap. */
 .rack {
+  position: relative; isolation: isolate;
   display: flex; flex-direction: column; gap: 1px;
-  background: var(--line);
+  background: var(--plate);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   overflow: hidden;
   box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.8);
 }
-.rack-row { display: flex; flex-wrap: wrap; gap: 1px; }
+.rack-row { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 1px; }
 .module {
   --accent: var(--red);
   position: relative;
   flex: var(--weight) 1 calc(var(--weight) * 3.7rem + 1.6rem);
-  background: var(--plate);
+  background: transparent;
+  outline: 1px solid var(--line);
   display: flex; flex-direction: column;
+}
+
+/* ---------- tattoo artwork ---------- */
+.tattoo {
+  position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0;
+  pointer-events: none; opacity: var(--tat-opacity);
+}
+.tattoo .ln { fill: none; stroke: var(--tat-line); stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.tattoo .ln.thin { stroke-width: 2; }
+.tattoo .f, .tattoo .f2 { stroke: var(--tat-line); stroke-width: 3.2; stroke-linejoin: round; }
+.tattoo .f { fill: var(--tat-fill); }
+.tattoo .f2 { fill: var(--tat-fill-2); }
+.tattoo .bg { fill: var(--plate); }
+.tattoo .eye, .tattoo .dot-fill { fill: var(--tat-line); }
+.tattoo .dots { fill: none; stroke: var(--tat-line); stroke-width: 5; stroke-linecap: round; stroke-dasharray: 0 13; }
+.tattoo .lettering {
+  fill: var(--tat-text); font-family: Georgia, "Times New Roman", serif; font-weight: 700; font-style: italic;
+  font-size: 40px; letter-spacing: 8px;
 }
 .accent-blue { --accent: var(--blue); }
 .accent-grey { --accent: var(--steel); }
@@ -566,6 +593,11 @@ textarea:focus { outline: none; border-color: var(--note); }
   --led: #ff3d9a;
   --lcd: #39f3ff;
   --note: #5dff8f;     /* comment mode: neon green, so it never reads as a section colour */
+  --tat-line: #b04dff;
+  --tat-fill: #ff7a1a;
+  --tat-fill-2: #3a1d52;
+  --tat-opacity: 0.2;
+  --tat-text: #ff7a1a;
 }
 [data-skin="neon"] .module-head {
   background: var(--plate-hi);
@@ -616,6 +648,11 @@ textarea:focus { outline: none; border-color: var(--note); }
   --led: #1fe36a;
   --lcd: #6dffa6;
   --note: #7b3cff;     /* comment mode: violet, distinct from both signal colours */
+  --tat-line: #1e2326;
+  --tat-fill: #1fe36a;
+  --tat-fill-2: #ffffff;
+  --tat-opacity: 0.13;
+  --tat-text: #1e2326;
   color-scheme: light;
 }
 [data-skin="daylight"] .module { --accent-ink: #0b2615; }

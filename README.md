@@ -35,6 +35,13 @@ A `*` after the name means you changed the sound since loading it. Presets
 change the sound only; arpeggiator, tempo and volume stay. All presets live
 in `presets.js` in real units (Hz, seconds), so they are easy to edit.
 
+## Tattoo artwork
+
+Behind the main panel sits an original tattoo-flash drawing: a radiant sun,
+a rose, a snake whose body is a waveform, two swallows and a "HALDEN 6"
+banner. It is drawn in `tattoo.js`; each skin sets its colours and strength
+with the `--tat-*` tokens in `styles.css`.
+
 ## Graphs
 
 DCO, LFO, VCF and ENV each show a small live graph of what their controls do:
@@ -90,6 +97,7 @@ them on the clipboard to paste straight into the chat.
 | `dsp/` | The synth voice, HPF and Juno-60 chorus in Faust, compiled to WebAssembly. See `dsp/README.md`. |
 | `vendor/` | faustwasm browser runtime (LGPL-2.1) and the junologue-chorus licence (MIT). |
 | `viz.js` | Section graphs and the live output scope. |
+| `tattoo.js` | Tattoo-flash artwork behind the main panel (sun, rose, snake, swallows, banner), coloured per skin. |
 | `arp.js` | Arpeggiator: clock, modes, recording, pattern editor, slots. |
 | `ui.js` | Rendering, input, keyboard, comment mode. |
 | `styles.css` | Look, layout and skins. |

@@ -117,7 +117,10 @@
       pushDsp();
       const queued = pending; pending = [];
       queued.forEach(fn => fn());
-      window.dispatchEvent(new Event('halden6-ready'));
+      // The audio device can need ~0.5 s after the first click before its clock
+      // moves; notes played before that come out late. Announce "ready" only then.
+      const announce = () => (ctx.currentTime > 0 ? window.dispatchEvent(new Event('halden6-ready')) : setTimeout(announce, 50));
+      announce();
     } catch (e) {
       console.error('Halden 6: sound engine failed to load', e);
     }
@@ -227,7 +230,7 @@
       // ladder resonance expressed as a biquad Q (dB) for the filter graph
       resQ: () => 20 * Math.log10(ladderQ()),
     },
-    state: () => (ctx ? (faust ? ctx.state : 'loading') : 'off'),
+    state: () => (ctx ? (faust && ctx.currentTime > 0 ? ctx.state : 'loading') : 'off'),
     engine: () => engineMode,
   };
 })();
