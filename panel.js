@@ -11,6 +11,8 @@
 //   stepper number with - / +
 //   button  momentary action
 //   wheel   pitch wheel, -1..1, springs back to 0
+//
+// Controls next to each other with the same `group` stay side by side.
 
 window.PANEL = [
   {
@@ -60,8 +62,8 @@ window.PANEL = [
       { id: 'tune', type: 'knob', label: 'Tune', bipolar: true, value: 0 },
       { id: 'volume', type: 'knob', label: 'Volume', value: 0.7 },
       { id: 'pitchWheel', type: 'wheel', label: 'Pitch Wheel', value: 0 },
-      { id: 'ml', type: 'toggle', label: 'ML', color: 'red', value: 0 },
-      { id: 'gml', type: 'toggle', label: 'G-ML', color: 'red', value: 0 },
+      { id: 'ml', type: 'toggle', label: 'ML', color: 'red', group: 'mono', value: 0 },
+      { id: 'gml', type: 'toggle', label: 'G-ML', color: 'red', group: 'mono', value: 0 },
     ],
   },
   {

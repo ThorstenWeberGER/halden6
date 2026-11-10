@@ -259,15 +259,26 @@
       sec.dataset.cid = s.id;
       // Width share of a section = sum of how much room its controls need
       const W = { slider: 1, knob: 1.3, wheel: 2.6, toggle: 0.9, switch: 0.9, select: 1, stepper: 1.3, button: 1 };
-      sec.style.setProperty('--weight', s.controls.reduce((sum, c) => sum + W[c.type], 0).toFixed(1));
+      sec.style.setProperty('--weight', s.controls.reduce((sum, c) => sum + (c.group ? W[c.type] * 0.7 : W[c.type]), 0).toFixed(1));
       const head = el('header', 'module-head', `<h3>${s.title}</h3>`);
       head.dataset.cid = s.id;
       const body = el('div', 'module-body');
+      let groupBox = null;
       s.controls.forEach(c => {
         const built = builders[c.type](c);
         built.node.dataset.cid = c.id;
         controlIndex[c.id] = { def: c, section: s, ...built };
-        body.append(built.node);
+        if (c.group) {
+          if (!groupBox || groupBox.dataset.group !== c.group) {
+            groupBox = el('div', 'ctl-group');
+            groupBox.dataset.group = c.group;
+            body.append(groupBox);
+          }
+          groupBox.append(built.node);
+        } else {
+          groupBox = null;
+          body.append(built.node);
+        }
         built.render();
       });
       sec.append(head, body);

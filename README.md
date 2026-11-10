@@ -20,7 +20,7 @@ Works fully offline: fonts are bundled in `fonts/` (SIL Open Font License).
 
 ## Skins
 
-Switch with **Studio / Neon** in the top bar; the choice is remembered.
+Switch with **Studio / Neon / Daylight** in the top bar; the choice is remembered.
 A skin is a block of colour tokens in `styles.css` under `[data-skin="..."]`.
 To add one, copy the Neon block, change the values, and add a button in `index.html`.
 

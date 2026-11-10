@@ -146,6 +146,9 @@ main {
 }
 .ctl:hover .readout, .ctl:focus-within .readout { color: var(--ink); }
 
+/* controls that belong together stay on one line */
+.ctl-group { display: flex; gap: 0.5rem; flex-wrap: nowrap; }
+
 /* ---------- fader ---------- */
 .fader { position: relative; width: 3rem; height: var(--fader-h); cursor: ns-resize; touch-action: none; --cap: 1.15rem; }
 .fader-nums {
@@ -258,7 +261,7 @@ main {
 
 /* ---------- pitch wheel ---------- */
 .wheel {
-  position: relative; width: clamp(110px, 10vw, 180px); height: 2.3rem; border-radius: 4px; cursor: ew-resize; touch-action: none;
+  position: relative; width: clamp(96px, 7.5vw, 170px); height: 2.3rem; border-radius: 4px; cursor: ew-resize; touch-action: none;
   background: repeating-linear-gradient(90deg, #22262d 0 2px, #0c0e11 2px 8px);
   border: 1px solid var(--line);
 }
@@ -407,6 +410,79 @@ textarea:focus { outline: none; border-color: var(--note); }
 [data-skin="neon"] .skin-btn[aria-pressed="true"] { box-shadow: inset 0 -2px 0 var(--red), 0 2px 10px -4px var(--red); }
 [data-skin="neon"] .key.white.down { background: linear-gradient(180deg, #d9dbe0, var(--red)); box-shadow: 0 0 14px color-mix(in srgb, var(--red) 60%, transparent); }
 [data-skin="neon"] .key.black.down { background: linear-gradient(180deg, #050608, var(--blue)); box-shadow: 0 0 14px color-mix(in srgb, var(--blue) 70%, transparent); }
+
+/* =========================================================
+   Skin: Daylight. Light and airy, neon green as the signal colour,
+   graphite for the control strips. Neon green is too bright for text
+   on white, so green only ever fills; text on it is dark.
+   ========================================================= */
+:root[data-skin="daylight"] {
+  --ground: #e8ebe8;
+  --plate: #f6f7f5;
+  --plate-hi: #ffffff;
+  --line: #d3d8d2;
+  --ink: #151a17;
+  --ink-dim: #66706a;
+  --blue: #1e2326;     /* control, chorus: graphite */
+  --red: #1fe36a;      /* sound path: neon green */
+  --steel: #c9cfc8;    /* performance: light grey */
+  --cream: #ffffff;
+  --amber: #1fe36a;
+  --orange: #2b7bff;   /* second signal colour: electric blue */
+  --led: #1fe36a;
+  --lcd: #6dffa6;
+  --note: #7b3cff;     /* comment mode: violet, distinct from both signal colours */
+  color-scheme: light;
+}
+[data-skin="daylight"] .module { --accent-ink: #0b2615; }
+[data-skin="daylight"] .accent-blue { --accent-ink: #ffffff; }
+[data-skin="daylight"] .accent-grey { --accent-ink: var(--ink); }
+[data-skin="daylight"] .module-head { background: var(--accent); }
+[data-skin="daylight"] .module-head h3 { color: var(--accent-ink); }
+[data-skin="daylight"] .rack { box-shadow: 0 24px 50px -30px rgba(20, 40, 25, 0.35); }
+[data-skin="daylight"] .fader-track { background: #dde2dc; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.15); }
+[data-skin="daylight"] .accent-blue .fader-fill { background: var(--orange); }
+[data-skin="daylight"] .fader-fill { opacity: 1; }
+[data-skin="daylight"] .fader-cap { background: linear-gradient(180deg, #ffffff, #eef0ee 48%, #ffffff 52%, #f1f3f1); border-color: #bfc5be; box-shadow: 0 3px 6px rgba(20, 40, 25, 0.25); }
+[data-skin="daylight"] .fader-cap::after { background: var(--ink); }
+[data-skin="daylight"] .fader.active .fader-cap::after { background: var(--ink); }
+[data-skin="daylight"] .fader:hover .fader-cap, [data-skin="daylight"] .fader.active .fader-cap { border-color: var(--ink-dim); }
+[data-skin="daylight"] .knob-ring { --accent: var(--red); }
+[data-skin="daylight"] .knob-body {
+  background: radial-gradient(circle at 50% 30%, #ffffff, #e3e7e2 80%);
+  border-color: #c3c9c2; box-shadow: 0 5px 12px rgba(20, 40, 25, 0.22);
+}
+[data-skin="daylight"] .knob-pointer { background: var(--ink); }
+[data-skin="daylight"] .lever-slot { background: #dde2dc; }
+[data-skin="daylight"] .lever-thumb { background: linear-gradient(180deg, #3a4044, #1e2326); box-shadow: 0 3px 6px rgba(20, 40, 25, 0.3); }
+[data-skin="daylight"] .led { background: #d3d8d2; }
+[data-skin="daylight"] .ctl.on .led { box-shadow: 0 0 10px var(--led); }
+[data-skin="daylight"] .tgl {
+  filter: none; background: var(--plate-hi); color: var(--ink-dim);
+  border: 1px solid var(--line); border-bottom: 3px solid var(--line);
+}
+[data-skin="daylight"] .tgl:hover { filter: none; color: var(--ink); border-color: #b9bfb8; }
+[data-skin="daylight"] .ctl.on .tgl {
+  background: var(--c); color: #0b2615; border-color: color-mix(in srgb, var(--c) 70%, #000);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--c) 45%, transparent);
+}
+[data-skin="daylight"] .ctl.on .tgl-orange { color: #ffffff; }
+[data-skin="daylight"] .ctl.on .tgl-cream { border-color: var(--ink-dim); }
+[data-skin="daylight"] .momentary { background: var(--plate-hi); border: 1px solid var(--line); border-bottom: 3px solid #b9bfb8; color: var(--ink); }
+[data-skin="daylight"] .step-btn, [data-skin="daylight"] .oct-btn { background: var(--plate-hi); }
+[data-skin="daylight"] .wheel { background: repeating-linear-gradient(90deg, #cfd5ce 0 2px, #eef1ed 2px 8px); }
+[data-skin="daylight"] .wheel-thumb { background: linear-gradient(90deg, #1e2326, #4a5156 50%, #1e2326); }
+[data-skin="daylight"] .key.white { border-color: #c3c9c2; background: linear-gradient(180deg, #eef0ee, #ffffff 12%); }
+[data-skin="daylight"] .key.black { background: linear-gradient(180deg, #111416, #2c3236 85%, #1a1e21); box-shadow: 0 4px 6px rgba(20, 40, 25, 0.3); }
+[data-skin="daylight"] .key.white.down { background: linear-gradient(180deg, #eef0ee, var(--red)); }
+[data-skin="daylight"] .key.black.down { background: linear-gradient(180deg, #111416, var(--orange)); }
+[data-skin="daylight"] .module.has-note::after { background: var(--note); }
+[data-skin="daylight"] .pill::before { background: #c3c9c2; }
+[data-skin="daylight"] .pill-live::before { background: var(--red); box-shadow: 0 0 8px var(--red); }
+[data-skin="daylight"] .skin-btn[aria-pressed="true"] { box-shadow: inset 0 -2px 0 var(--red); }
+[data-skin="daylight"] .badge { color: #ffffff; }
+[data-skin="daylight"] .btn-primary { color: #ffffff; }
+[data-skin="daylight"] .drawer, [data-skin="daylight"] .popover, [data-skin="daylight"] .toast { box-shadow: 0 20px 50px rgba(20, 40, 25, 0.2); }
 
 @media (max-width: 640px) {
   .keys-hint { display: none; }
