@@ -16,6 +16,14 @@ Click once anywhere to start audio, then play with the mouse or the keyboard.
 | Double-click | Reset a fader or knob |
 | Click lower on a piano key | Louder note (used by Velocity Env) |
 
+Works fully offline: fonts are bundled in `fonts/` (SIL Open Font License).
+
+## Skins
+
+Switch with **Studio / Neon** in the top bar; the choice is remembered.
+A skin is a block of colour tokens in `styles.css` under `[data-skin="..."]`.
+To add one, copy the Neon block, change the values, and add a button in `index.html`.
+
 ## Discuss changes with Claude
 
 1. Click **Comment mode**, then click any control or section header and type a note.
@@ -33,7 +41,8 @@ them on the clipboard to paste straight into the chat.
 | `panel.js` | Every section and control. Add or move a control here. |
 | `synth.js` | Web Audio sound engine. |
 | `ui.js` | Rendering, input, keyboard, comment mode. |
-| `styles.css` | Look and layout. |
+| `styles.css` | Look, layout and skins. |
+| `fonts/` | Bundled font files and their licences. |
 
 Plain HTML, CSS and JavaScript with no build step, so Electron or Tauri can
 wrap it as a desktop app later.

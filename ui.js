@@ -362,6 +362,16 @@
   $('#oct-up').addEventListener('click', () => shiftOctave(1));
   new ResizeObserver(() => buildKeyboard()).observe(kb);
 
+  // ---------- skins ----------
+  // A skin is a set of colour tokens in styles.css under [data-skin="..."]
+  function setSkin(name) {
+    document.documentElement.dataset.skin = name;
+    document.querySelectorAll('.skin-btn').forEach(b => b.setAttribute('aria-pressed', b.dataset.skin === name));
+    store.set('juno-skin-v1', name);
+  }
+  document.querySelectorAll('.skin-btn').forEach(b => b.addEventListener('click', () => setSkin(b.dataset.skin)));
+  setSkin(document.documentElement.dataset.skin || 'studio');
+
   // ---------- audio status ----------
   function updateAudioStatus() {
     const st = S.state(), pill = $('#audio-status');
@@ -498,7 +508,7 @@
   }
 
   function toMarkdown() {
-    const lines = ['# Juno UI notes', '', `Exported: ${new Date().toLocaleString()}`, '', '## Notes', ''];
+    const lines = ['# Juno UI notes', '', `Exported: ${new Date().toLocaleString()}`, `Skin: ${document.documentElement.dataset.skin}`, '', '## Notes', ''];
     if (!notes.length) lines.push('_No notes._');
     notes.forEach(n => {
       lines.push(`- **${n.label}**${n.value ? ` (was ${n.value})` : ''}: ${n.text.replace(/\n+/g, ' ')}`);

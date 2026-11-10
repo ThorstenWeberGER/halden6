@@ -87,6 +87,16 @@ main {
   padding-right: max(16px, 2vw, env(safe-area-inset-right, 0px));
 }
 
+/* ---------- skin switch ---------- */
+.skin-switch { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.skin-btn {
+  background: var(--plate); border: 0; padding: 0.45rem 0.75rem; cursor: pointer;
+  font-family: var(--font-label); font-size: 0.9rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-dim);
+}
+.skin-btn + .skin-btn { border-left: 1px solid var(--line); }
+.skin-btn:hover { color: var(--ink); }
+.skin-btn[aria-pressed="true"] { background: var(--plate-hi); color: var(--ink); box-shadow: inset 0 -2px 0 var(--red); }
+
 /* ---------- faceplate ---------- */
 /* Rows and sections sit on a line-coloured ground with 1px gaps,
    so the hairlines stay correct however the sections wrap. */
@@ -236,11 +246,11 @@ main {
 /* ---------- LCD select & stepper ---------- */
 .lcd {
   font-family: var(--font-data); font-size: 0.85rem;
-  background: #08110c; color: var(--lcd); border: 1px solid #1d3327; border-radius: 3px;
+  background: color-mix(in srgb, var(--lcd) 5%, #040506); color: var(--lcd); border: 1px solid color-mix(in srgb, var(--lcd) 22%, #000); border-radius: 3px;
   padding: 0.35rem 0.6rem; min-width: 3.8rem; text-align: center; cursor: pointer;
   text-shadow: 0 0 6px color-mix(in srgb, var(--lcd) 50%, transparent);
 }
-.lcd:hover { border-color: #2f5a42; }
+.lcd:hover { border-color: color-mix(in srgb, var(--lcd) 45%, #000); }
 .stepper { display: flex; align-items: center; gap: 0.25rem; }
 .lcd-num { min-width: 2.4rem; cursor: default; font-size: 1.05rem; }
 .step-btn { width: 1.7rem; height: 1.7rem; border-radius: 3px; border: 1px solid var(--line); background: var(--plate-hi); cursor: pointer; }
@@ -348,6 +358,55 @@ textarea:focus { outline: none; border-color: var(--note); }
   background: var(--plate-hi); border: 1px solid var(--line); border-radius: 4px; padding: 0.55rem 1rem; font-size: 0.85rem;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
+
+/* =========================================================
+   Skin: Neon. Neutral greys, neon purple and orange, glow.
+   Same layout, only tokens and a few lit-up details change.
+   ========================================================= */
+:root[data-skin="neon"] {
+  --ground: #0e0f11;
+  --plate: #1a1b1e;
+  --plate-hi: #222327;
+  --line: #2e3034;
+  --ink: #ededf0;
+  --ink-dim: #8c8e96;
+  --blue: #b04dff;     /* control, chorus: neon purple */
+  --red: #ff7a1a;      /* sound path: neon orange */
+  --steel: #a3a5ad;    /* performance: light grey */
+  --cream: #e8e8ee;
+  --amber: #b04dff;
+  --orange: #ff7a1a;
+  --led: #ff3d9a;
+  --lcd: #39f3ff;
+  --note: #5dff8f;     /* comment mode: neon green, so it never reads as a section colour */
+}
+[data-skin="neon"] .module-head {
+  background: var(--plate-hi);
+  border-bottom: 1px solid var(--accent);
+  box-shadow: 0 1px 12px -2px var(--accent);
+}
+[data-skin="neon"] .module-head h3 { color: var(--accent); text-shadow: 0 0 10px color-mix(in srgb, var(--accent) 70%, transparent); }
+[data-skin="neon"] .fader-fill { opacity: 1; }
+[data-skin="neon"] .fader-cap { background: linear-gradient(180deg, #34363c, #1c1d21 48%, #34363c 52%, #25262a); border-color: #46484f; }
+[data-skin="neon"] .fader.active .fader-cap,
+[data-skin="neon"] .fader:hover .fader-cap { border-color: var(--accent); box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 50%, transparent), 0 3px 6px rgba(0, 0, 0, 0.7); }
+[data-skin="neon"] .knob-body { background: radial-gradient(circle at 50% 35%, #3c3e45, #18191c 75%); }
+[data-skin="neon"] .knob-pointer { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+[data-skin="neon"] .lever-thumb { background: linear-gradient(180deg, #ededf0, #9a9ca4); }
+[data-skin="neon"] .tgl {
+  filter: none; background: transparent;
+  border: 1px solid var(--c); border-bottom-width: 1px;
+  color: var(--c);
+}
+[data-skin="neon"] .tgl:hover { background: color-mix(in srgb, var(--c) 12%, transparent); filter: none; }
+[data-skin="neon"] .ctl.on .tgl {
+  background: var(--c); color: #0e0f11;
+  box-shadow: 0 0 16px color-mix(in srgb, var(--c) 60%, transparent), 0 0 2px var(--c);
+}
+[data-skin="neon"] .momentary { background: var(--cream); border-bottom-color: #74767e; }
+[data-skin="neon"] .skin-btn[aria-pressed="true"] { box-shadow: inset 0 -2px 0 var(--red), 0 2px 10px -4px var(--red); }
+[data-skin="neon"] .key.white.down { background: linear-gradient(180deg, #d9dbe0, var(--red)); box-shadow: 0 0 14px color-mix(in srgb, var(--red) 60%, transparent); }
+[data-skin="neon"] .key.black.down { background: linear-gradient(180deg, #050608, var(--blue)); box-shadow: 0 0 14px color-mix(in srgb, var(--blue) 70%, transparent); }
 
 @media (max-width: 640px) {
   .keys-hint { display: none; }

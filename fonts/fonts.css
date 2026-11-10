@@ -1,0 +1,9 @@
+/* Local copies of the UI fonts (Latin subset, from Google Fonts), so the UI
+   works offline and inside a packaged desktop app.
+   All three families use the SIL Open Font License, see OFL-*.txt. */
+
+@font-face { font-family: "Barlow Condensed"; font-style: normal; font-weight: 500; font-display: swap; src: url("barlow-condensed-500.woff2") format("woff2"); }
+@font-face { font-family: "Barlow Condensed"; font-style: normal; font-weight: 600; font-display: swap; src: url("barlow-condensed-600.woff2") format("woff2"); }
+@font-face { font-family: "Barlow Condensed"; font-style: normal; font-weight: 700; font-display: swap; src: url("barlow-condensed-700.woff2") format("woff2"); }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 100 900; font-display: swap; src: url("inter-variable.woff2") format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-style: normal; font-weight: 100 800; font-display: swap; src: url("jetbrains-mono-variable.woff2") format("woff2"); }
