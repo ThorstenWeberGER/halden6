@@ -485,12 +485,13 @@
   function updateAudioStatus() {
     const st = S.state(), pill = $('#audio-status');
     const on = st === 'running';
-    pill.textContent = on ? 'Audio on' : 'Audio off · click anywhere';
+    pill.textContent = on ? 'Audio on' : st === 'loading' ? 'Loading sound…' : 'Audio off · click anywhere';
     pill.classList.toggle('pill-live', on);
     pill.classList.toggle('pill-muted', !on);
   }
   const unlock = () => { S.start(); setTimeout(updateAudioStatus, 100); };
   window.addEventListener('pointerdown', unlock, { once: true });
+  window.addEventListener('juno-ready', updateAudioStatus);
   window.addEventListener('keydown', unlock, { once: true });
 
   // ---------- comment mode ----------

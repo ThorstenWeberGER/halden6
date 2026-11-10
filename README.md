@@ -8,6 +8,13 @@ sound engine and a comment mode for discussing changes with Claude.
 Open `index.html` in Chrome or Edge (double-click works, no server or install).
 Click once anywhere to start audio, then play with the mouse or the keyboard.
 
+For the lowest latency, serve the folder instead (the sound engine then runs on
+its own audio thread):
+
+```
+cd Juno && python3 -m http.server 8000     # then open http://localhost:8000
+```
+
 | Input | Action |
 |---|---|
 | `A W S E D F T G Y H U J K O L P ;` | Play notes (C4 upwards) |
@@ -68,7 +75,9 @@ them on the clipboard to paste straight into the chat.
 | File | What it holds |
 |---|---|
 | `panel.js` | Every section and control. Add or move a control here. |
-| `synth.js` | Web Audio sound engine. |
+| `synth.js` | Connects the UI to the sound engine; chorus, HPF, volume. |
+| `dsp/` | The synth voice in Faust, compiled to WebAssembly. See `dsp/README.md`. |
+| `vendor/` | faustwasm browser runtime (LGPL-2.1). |
 | `viz.js` | Section graphs and the live output scope. |
 | `arp.js` | Arpeggiator: clock, modes, recording, pattern editor, slots. |
 | `ui.js` | Rendering, input, keyboard, comment mode. |
@@ -84,6 +93,6 @@ These are not clear from the reference image and are open for discussion:
 
 - **DCO switches**: first = PWM source (LFO or ENV), second = PWM modulation on/off.
   Off makes the PWM fader a fixed pulse width.
-- **ML / G-ML**: mono legato, and mono legato with glide (fixed 80 ms).
+- **ML / G-ML**: one note at a time; G-ML adds an 80 ms glide. Each new note restarts the envelope (no true legato yet).
 - **Pitch wheel section** is labelled "Performance"; the bend faders are
   "Bend DCO" (up to 12 semitones) and "Bend VCF".

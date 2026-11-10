@@ -1,0 +1,8 @@
+{
+  "name": "juno-dsp-build",
+  "private": true,
+  "description": "Builds the Faust sound engine for the Juno UI. Only needed after editing juno.dsp.",
+  "type": "module",
+  "scripts": { "build": "node build.mjs" },
+  "devDependencies": { "@grame/faustwasm": "0.20.1" }
+}
