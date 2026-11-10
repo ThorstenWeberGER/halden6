@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Juno Synth Mock</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">JUNO</span>
+      <span class="brand-sub">poly synth · mock v0.1</span>
+    </div>
+    <div class="topbar-actions">
+      <span id="audio-status" class="pill pill-muted" title="Browsers start audio only after a click or key press">Audio off · click anywhere</span>
+      <button id="btn-comment" class="tb-btn" aria-pressed="false" title="Click any control to leave a note (Esc to exit)">
+        <span class="tb-dot"></span>Comment mode
+      </button>
+      <button id="btn-notes" class="tb-btn" title="Show all notes">
+        Notes <span id="notes-count" class="badge">0</span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <div id="rack" class="rack"></div>
+
+    <section class="keys-wrap" aria-label="Keyboard">
+      <div class="keys-bar">
+        <button class="oct-btn" id="oct-down" title="Octave down (Z)">−</button>
+        <span class="oct-label">Octave <b id="oct-value">0</b></span>
+        <button class="oct-btn" id="oct-up" title="Octave up (X)">+</button>
+        <span class="keys-hint">Play with the mouse (click lower on a key = louder) or your keyboard: A W S E D F T G Y H U J K O L P</span>
+      </div>
+      <div id="keyboard" class="keyboard"></div>
+    </section>
+  </main>
+
+  <!-- Notes drawer -->
+  <aside id="drawer" class="drawer" aria-hidden="true">
+    <div class="drawer-head">
+      <h2>Notes for Claude</h2>
+      <button id="drawer-close" class="icon-btn" aria-label="Close">✕</button>
+    </div>
+    <p class="drawer-help">Turn on Comment mode and click any control, or write a general note below. Notes stay in this browser. Save them as <code>Juno/notes/juno-notes.md</code> so Claude can read them.</p>
+    <div class="general">
+      <textarea id="general-input" rows="3" placeholder="General note, e.g. 'Make the ENV section bigger'"></textarea>
+      <button id="general-add" class="btn btn-primary">Add note</button>
+    </div>
+    <ul id="notes-list" class="notes-list"></ul>
+    <div class="drawer-foot">
+      <button id="notes-save" class="btn btn-primary">Save notes file</button>
+      <button id="notes-copy" class="btn">Copy as Markdown</button>
+      <button id="notes-clear" class="btn btn-danger">Clear all</button>
+    </div>
+  </aside>
+
+  <!-- Comment popover -->
+  <div id="popover" class="popover" hidden>
+    <div class="popover-title" id="popover-title"></div>
+    <textarea id="popover-input" rows="3" placeholder="What should change here?"></textarea>
+    <div class="popover-actions">
+      <button id="popover-cancel" class="btn">Cancel</button>
+      <button id="popover-save" class="btn btn-primary">Save note</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="panel.js"></script>
+  <script src="synth.js"></script>
+  <script src="ui.js"></script>
+</body>
+</html>
