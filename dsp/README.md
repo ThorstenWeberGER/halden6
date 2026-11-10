@@ -18,11 +18,12 @@ npm install      # once; installs @grame/faustwasm (pinned)
 npm run build
 ```
 
-## Later: desktop app or plugin
+## Later: VST3 plugin
 
-The same `halden6.dsp` compiles to C++ with the Faust compiler, for example as a
-JUCE standalone app or VST/AU plugin (`faust2juce halden6.dsp`). The browser UI
-can stay as it is inside a desktop shell, or the DSP can run natively.
+The same `halden6.dsp` compiles to C++ with the Faust compiler (`faust -lang cpp`).
+The plan is to use that inside a JUCE VST3 plugin for Ableton Live, while the web
+version keeps using the WebAssembly build. Both builds share this one file.
+See [../docs/plugin-plan.md](../docs/plugin-plan.md).
 
 ## Licences
 

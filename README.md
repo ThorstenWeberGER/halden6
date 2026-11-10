@@ -129,10 +129,15 @@ them on the clipboard to paste straight into the chat.
 | `ui.js` | Rendering, input, keyboard, comment mode. |
 | `styles.css` | Look, layout and skins. |
 | `fonts/` | Bundled font files and their licences. |
-| `docs/` | README images and the script that renders them. |
+| `docs/` | README images, the script that renders them, and the plugin plan. |
 
-Plain HTML, CSS and JavaScript with no build step, so Electron or Tauri can
-wrap it as a desktop app later.
+Plain HTML, CSS and JavaScript with no build step.
+
+## Next: a VST3 plugin for Ableton Live
+
+The plan is to ship Halden 6 as an open-source VST3 instrument for Ableton Live
+on Windows, built with JUCE. It will reuse this panel and the same Faust sound
+engine, and the web version stays. See [docs/plugin-plan.md](docs/plugin-plan.md).
 
 ### Refresh the README images
 
