@@ -91,7 +91,7 @@
       fader.tabIndex = 0;
       fader.setAttribute('role', 'slider');
       fader.setAttribute('aria-label', c.label);
-      fader.innerHTML = '<div class="fader-scale"></div><div class="fader-track"><div class="fader-fill"></div></div><div class="fader-cap"></div>';
+      fader.innerHTML = '<div class="fader-nums" aria-hidden="true"><span>10</span><span>5</span><span>0</span></div><div class="fader-scale"></div><div class="fader-track"><div class="fader-fill"></div></div><div class="fader-cap"></div>';
       const readout = el('div', 'readout');
       wrap.append(fader, el('div', 'ctl-label', c.label), readout);
       const render = () => {
@@ -258,7 +258,7 @@
       const sec = el('section', `module accent-${s.accent}`);
       sec.dataset.cid = s.id;
       // Width share of a section = sum of how much room its controls need
-      const W = { slider: 1, knob: 1.3, wheel: 2, toggle: 0.9, switch: 0.9, select: 1, stepper: 1.3, button: 1 };
+      const W = { slider: 1, knob: 1.3, wheel: 2.6, toggle: 0.9, switch: 0.9, select: 1, stepper: 1.3, button: 1 };
       sec.style.setProperty('--weight', s.controls.reduce((sum, c) => sum + W[c.type], 0).toFixed(1));
       const head = el('header', 'module-head', `<h3>${s.title}</h3>`);
       head.dataset.cid = s.id;
