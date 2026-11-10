@@ -323,6 +323,11 @@ main {
 .rec-dot { width: 0.55rem; height: 0.55rem; border-radius: 50%; background: var(--line); }
 .pat-rec.on { border-color: var(--led); color: var(--led); }
 .pat-rec.on .rec-dot { background: var(--led); box-shadow: 0 0 8px var(--led); animation: rec-blink 0.9s steps(2, start) infinite; }
+.preset-select {
+  height: 2rem; min-width: 13rem; max-width: 100%; padding: 0 0.6rem; border-radius: 4px; cursor: pointer;
+  background: var(--plate-hi); border: 1px solid var(--line); color: var(--ink); font: inherit; font-size: 0.85rem;
+}
+.preset-select:hover, .preset-select:focus { border-color: var(--ink-dim); outline: none; }
 .pat-slots { margin-left: auto; align-items: flex-end; min-width: 0; flex: 0 1 30rem; }
 .slot-row { display: flex; gap: 0.4rem; }
 .slot-name {

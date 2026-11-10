@@ -33,6 +33,36 @@
     ].map(s => s ? { on: true, note: s[0], vel: s[1], gate: s[2], tie: !!s[3] } : blankStep(60)),
   };
 
+  // Factory patterns in typical 80s styles. These are original patterns
+  // written for this synth, not transcriptions of specific songs.
+  // Step: [note, velocity, gate, tie] or null for a rest. Notes are MIDI
+  // numbers written for C (C3 = 48, C4 = 60); the held key transposes them.
+  const st = (n, v = 0.8, g = 0.5, tie = false) => ({ on: true, note: n, vel: v, gate: g, tie });
+  const build = list => list.map(x => (x ? st(...x) : blankStep(60)));
+  const PRESETS = [
+    { name: 'Italo Octaves', bpm: 118, rate: 3, swing: 0, info: 'octave-jumping disco bass, C - Ab - Bb',
+      steps: build([[48, 0.95, 0.4], [60, 0.6, 0.3], [48, 0.8, 0.4], [60, 0.65, 0.3], [48, 0.9, 0.4], [60, 0.6, 0.3], [48, 0.8, 0.4], [60, 0.65, 0.3],
+                    [44, 0.95, 0.4], [56, 0.6, 0.3], [44, 0.8, 0.4], [56, 0.65, 0.3], [46, 0.9, 0.4], [58, 0.6, 0.3], [46, 0.8, 0.4], [58, 0.7, 0.3]]) },
+    { name: 'Hi-NRG Gallop', bpm: 128, rate: 3, swing: 0, info: 'galloping one-note bass, up a third at the end',
+      steps: build([[48, 1, 0.4], null, [48, 0.6, 0.3], [48, 0.75, 0.3], [48, 1, 0.4], null, [48, 0.6, 0.3], [48, 0.75, 0.3],
+                    [48, 1, 0.4], null, [48, 0.6, 0.3], [48, 0.75, 0.3], [51, 1, 0.4], null, [51, 0.6, 0.3], [53, 0.8, 0.3]]) },
+    { name: 'Synthpop Arp', bpm: 112, rate: 3, swing: 0, info: 'C minor and Ab major broken chords',
+      steps: build([[60, 1, 0.5], [63, 0.6, 0.4], [67, 0.7, 0.4], [72, 0.8, 0.4], [67, 0.9, 0.5], [63, 0.6, 0.4], [60, 0.7, 0.4], [63, 0.65, 0.4],
+                    [56, 1, 0.5], [60, 0.6, 0.4], [63, 0.7, 0.4], [68, 0.8, 0.4], [63, 0.9, 0.5], [60, 0.6, 0.4], [56, 0.7, 0.4], [60, 0.65, 0.4]]) },
+    { name: 'Electro Funk', bpm: 106, rate: 3, swing: 0.35, info: 'syncopated minor bass with swing',
+      steps: build([[48, 1, 0.3], null, null, [48, 0.7, 0.2], null, [51, 0.8, 0.3], [53, 0.75, 1, true], null,
+                    [48, 0.9, 0.3], null, [55, 0.8, 0.3], null, [58, 0.85, 0.4], null, [55, 0.7, 0.3], [53, 0.6, 0.3]]) },
+    { name: 'New Wave Drive', bpm: 136, rate: 1, swing: 0, info: 'straight eighths, root then fifth and seventh',
+      steps: build([[48, 0.95, 0.7], [48, 0.6, 0.7], [48, 0.85, 0.7], [48, 0.6, 0.7], [48, 0.85, 0.7], [48, 0.6, 0.7], [55, 0.8, 0.7], [58, 0.75, 0.7],
+                    [46, 0.95, 0.7], [46, 0.6, 0.7], [46, 0.85, 0.7], [46, 0.6, 0.7], [46, 0.85, 0.7], [46, 0.6, 0.7], [53, 0.8, 0.7], [55, 0.75, 0.7]]) },
+    { name: 'Night Drive', bpm: 96, rate: 3, swing: 0, info: 'moody soundtrack sequence, Cm9 to Bb',
+      steps: build([[60, 1, 0.5], [67, 0.6, 0.4], [72, 0.75, 0.4], [75, 0.7, 0.5], [74, 0.9, 0.5], [72, 0.6, 0.4], [67, 0.7, 0.4], [63, 0.6, 0.5],
+                    [58, 1, 0.5], [65, 0.6, 0.4], [70, 0.75, 0.4], [74, 0.7, 0.5], [72, 0.9, 0.5], [70, 0.6, 0.4], [65, 0.7, 0.4], [62, 0.6, 0.6]]) },
+    { name: 'Minimal Wave', bpm: 124, rate: 1, swing: 0, length: 8, info: 'eight-step cold-wave loop',
+      steps: build([[60, 1, 0.2], [60, 0.6, 0.8], [63, 0.8, 0.2], [60, 0.6, 0.6], [67, 0.9, 0.2], [60, 0.6, 0.8], [65, 0.8, 0.3], [63, 0.7, 0.9],
+                    null, null, null, null, null, null, null, null]) },
+  ];
+
   let api = null;            // helpers from ui.js
   let pat = null;            // { length, steps[16] }
   let slots = [];            // 8 x { name, length, steps, bpm, rate } | null
@@ -248,7 +278,27 @@
       api.toast(`Loaded "${sl.name}"`);
     });
 
-    tools.append(len, rec, slotTool);
+    // 80s factory presets
+    const presetTool = el('div', 'pat-tool');
+    ui.preset = el('select', 'preset-select');
+    ui.preset.id = 'arp-preset';
+    ui.preset.innerHTML = '<option value="">Choose a pattern…</option>' +
+      PRESETS.map((p, i) => `<option value="${i}">${p.name} · ${p.bpm} BPM</option>`).join('');
+    presetTool.append(ui.preset, el('div', 'ctl-label', '80s presets'));
+    ui.preset.addEventListener('change', () => {
+      const p = PRESETS[+ui.preset.value];
+      ui.preset.value = '';
+      if (!p || api.isCommenting()) return;
+      pat = { length: p.length || 16, steps: p.steps.map(x => ({ ...x })) };
+      api.setValue('bpm', p.bpm);
+      api.setValue('arpRate', p.rate);
+      api.setValue('arpSwing', p.swing);
+      api.setValue('arpMode', 1);
+      savePattern(); renderGrid();
+      api.toast(`Loaded "${p.name}": ${p.info}.${P.arpOn ? '' : ' Switch ARP on, then hold C4.'}`);
+    });
+
+    tools.append(len, rec, presetTool, slotTool);
 
     ui.gridWrap = el('div', 'pat-grid-wrap');
     ui.grid = el('div', 'pat-grid');

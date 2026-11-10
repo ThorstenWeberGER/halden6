@@ -32,6 +32,10 @@ Switch **On**, then choose a mode:
   Press **Rec** again to finish; the pattern length becomes the number of steps recorded.
 - **Latch** keeps it playing after you let go. **BPM** (drag, scroll or **Tap**)
   also drives LFO tempo sync. **Swing** delays every second step.
+- **80s presets**: 7 factory patterns in typical 80s styles (Italo octave bass,
+  Hi-NRG gallop, synthpop arp, electro funk, new wave drive, soundtrack sequence,
+  minimal wave). They are original patterns, not transcriptions of songs.
+  Loading one sets its BPM, rate and swing and switches to Pattern mode.
 - **Slots**: pick one of 8 slots, type a name, **Save**. **Load** brings back the
   pattern with its BPM and rate. Slots and the current pattern survive a reload.
 
