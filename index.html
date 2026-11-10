@@ -18,6 +18,15 @@
       <span class="brand-mark">JUNO</span>
       <span class="brand-sub">poly synth · mock v0.1</span>
     </div>
+    <div class="preset-bar" role="group" aria-label="Preset">
+      <button id="preset-prev" class="step-btn" aria-label="Previous preset">‹</button>
+      <button id="preset-open" class="preset-name" title="Open the preset library">
+        <span id="preset-num" class="preset-num">---</span>
+        <span id="preset-label" class="preset-label">Your patch</span>
+        <span id="preset-meta" class="preset-meta"></span>
+      </button>
+      <button id="preset-next" class="step-btn" aria-label="Next preset">›</button>
+    </div>
     <div class="topbar-actions">
       <span id="audio-status" class="pill pill-muted" title="Browsers start audio only after a click or key press">Audio off · click anywhere</span>
       <div class="skin-switch" role="group" aria-label="Skin">
@@ -81,6 +90,18 @@
     </div>
   </aside>
 
+  <!-- Preset library -->
+  <aside id="preset-drawer" class="drawer drawer-left" aria-hidden="true">
+    <div class="drawer-head">
+      <h2>Presets</h2>
+      <button id="preset-close" class="icon-btn" aria-label="Close">✕</button>
+    </div>
+    <input id="preset-search" class="preset-search" type="search" placeholder="Search name, style or genre" autocomplete="off">
+    <div id="preset-cats" class="preset-cats"></div>
+    <ul id="preset-list" class="preset-list"></ul>
+    <p class="drawer-help">Loading a preset changes the sound only. Arpeggiator, tempo and volume stay as they are.</p>
+  </aside>
+
   <!-- Comment popover -->
   <div id="popover" class="popover" hidden>
     <div class="popover-title" id="popover-title"></div>
@@ -96,6 +117,7 @@
   <script src="panel.js"></script>
   <script src="vendor/faustwasm.js"></script>
   <script src="dsp/juno-dsp.js"></script>
+  <script src="presets.js"></script>
   <script src="synth.js"></script>
   <script src="arp.js"></script>
   <script src="viz.js"></script>

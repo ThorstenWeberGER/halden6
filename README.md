@@ -25,6 +25,16 @@ cd Juno && python3 -m http.server 8000     # then open http://localhost:8000
 
 Works fully offline: fonts are bundled in `fonts/` (SIL Open Font License).
 
+## Presets
+
+100 factory sounds in 10 categories (Bass, Lead, Pad, Keys, Brass, Strings,
+Pluck, Bell, Arp, FX) across about 50 styles, from Synthpop, Italo and Acid to
+Synthwave, Lo-fi, Trap, Future Bass and Cinematic. Use the arrows next to the
+preset name in the top bar, or click the name to search and filter the library.
+A `*` after the name means you changed the sound since loading it. Presets
+change the sound only; arpeggiator, tempo and volume stay. All presets live
+in `presets.js` in real units (Hz, seconds), so they are easy to edit.
+
 ## Graphs
 
 DCO, LFO, VCF and ENV each show a small live graph of what their controls do:
@@ -75,9 +85,10 @@ them on the clipboard to paste straight into the chat.
 | File | What it holds |
 |---|---|
 | `panel.js` | Every section and control. Add or move a control here. |
-| `synth.js` | Connects the UI to the sound engine; chorus, HPF, volume. |
-| `dsp/` | The synth voice in Faust, compiled to WebAssembly. See `dsp/README.md`. |
-| `vendor/` | faustwasm browser runtime (LGPL-2.1). |
+| `synth.js` | Connects the UI to the sound engine; volume and limiter. |
+| `presets.js` | The 100 factory presets. |
+| `dsp/` | The synth voice, HPF and Juno-60 chorus in Faust, compiled to WebAssembly. See `dsp/README.md`. |
+| `vendor/` | faustwasm browser runtime (LGPL-2.1) and the junologue-chorus licence (MIT). |
 | `viz.js` | Section graphs and the live output scope. |
 | `arp.js` | Arpeggiator: clock, modes, recording, pattern editor, slots. |
 | `ui.js` | Rendering, input, keyboard, comment mode. |

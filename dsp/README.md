@@ -1,7 +1,7 @@
 # Juno sound engine (Faust)
 
-`juno.dsp` is the synth voice: oscillators, PWM, sub, noise, Moog ladder filter,
-envelope, LFO. It is written in [Faust](https://faust.grame.fr) and uses only
+`juno.dsp` is the synth voice (oscillators, PWM, sub, noise, Moog ladder filter,
+envelope, LFO) plus the effect after the voices: HPF and the Juno-60 chorus. It is written in [Faust](https://faust.grame.fr) and uses only
 blocks from the Faust standard libraries, so there is no hand-written DSP.
 
 | File | What it is |
@@ -27,4 +27,5 @@ can stay as it is inside a desktop shell, or the DSP can run natively.
 ## Licences
 
 - Faust libraries used here: STK-4.3 (MIT-style) and MIT.
+- Juno-60 chorus: ported from [junologue-chorus](https://github.com/peterall/junologue-chorus) by Peter Allwin, MIT, see `../vendor/junologue-chorus-LICENSE.txt`.
 - faustwasm runtime (`../vendor/faustwasm.js`): LGPL-2.1, see `../vendor/faustwasm-COPYING.txt`.

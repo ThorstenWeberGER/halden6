@@ -29,6 +29,10 @@
   }));
 
   let commentMode = false;
+  // preset state (declared early: setValue reads it)
+  const PRESET_IDS = new Set(Object.keys((window.PRESETS[0] || { values: {} }).values));
+  let presetLoading = false, presetEdited = false, currentPreset = null;
+  function renderPresetBar() {}
   let savePatchTimer = null;
 
   function setValue(id, value) {
@@ -36,6 +40,7 @@
     controlIndex[id].render();
     if (window.Arp) Arp.paramChanged(id);
     if (window.Viz) Viz.update();
+    if (!presetLoading && PRESET_IDS.has(id) && currentPreset && !presetEdited) { presetEdited = true; renderPresetBar(); }
     if (id === 'lfoTempo' && controlIndex.lfoRate) controlIndex.lfoRate.render();
     clearTimeout(savePatchTimer);
     savePatchTimer = setTimeout(() => {
@@ -469,6 +474,77 @@
   $('#oct-down').addEventListener('click', () => shiftOctave(-1));
   $('#oct-up').addEventListener('click', () => shiftOctave(1));
   new ResizeObserver(() => buildKeyboard()).observe(kb);
+
+  // ---------- presets ----------
+  const savedPreset = store.get('juno-preset-v1', null);
+  currentPreset = savedPreset ? window.PRESETS.find(p => p.num === savedPreset.num) || null : null;
+  presetEdited = !!(savedPreset && savedPreset.edited);
+  let presetCat = 'All', presetQuery = '';
+
+  renderPresetBar = function () {
+    $('#preset-num').textContent = currentPreset ? String(currentPreset.num).padStart(3, '0') : '---';
+    $('#preset-label').textContent = currentPreset ? currentPreset.name + (presetEdited ? ' *' : '') : 'Your patch';
+    $('#preset-meta').textContent = currentPreset ? `${currentPreset.cat} · ${currentPreset.genre}` : '';
+    $('#preset-open').title = presetEdited ? 'Edited since loading (*). Open the preset library' : 'Open the preset library';
+    store.set('juno-preset-v1', currentPreset ? { num: currentPreset.num, edited: presetEdited } : null);
+    document.querySelectorAll('.preset-row').forEach(r => r.classList.toggle('active', currentPreset && +r.dataset.num === currentPreset.num));
+  };
+
+  function loadPreset(p) {
+    presetLoading = true;
+    Object.entries(p.values).forEach(([id, v]) => { if (controlIndex[id]) setValue(id, v); });
+    presetLoading = false;
+    currentPreset = p; presetEdited = false;
+    renderPresetBar();
+  }
+
+  const presetMatches = () => window.PRESETS.filter(p =>
+    (presetCat === 'All' || p.cat === presetCat) &&
+    (!presetQuery || `${p.name} ${p.cat} ${p.genre}`.toLowerCase().includes(presetQuery)));
+
+  function stepPreset(d) {
+    const list = presetMatches().length ? presetMatches() : window.PRESETS;
+    const i = currentPreset ? list.findIndex(p => p.num === currentPreset.num) : -1;
+    loadPreset(list[(i + d + list.length) % list.length]);
+    toast(`${String(currentPreset.num).padStart(3, '0')} ${currentPreset.name}`);
+  }
+
+  function renderPresetList() {
+    const cats = $('#preset-cats');
+    cats.innerHTML = '';
+    ['All', ...window.PRESET_CATEGORIES].forEach(c => {
+      const n = c === 'All' ? window.PRESETS.length : window.PRESETS.filter(p => p.cat === c).length;
+      const b = el('button', 'preset-cat', `${c} <span>${n}</span>`);
+      b.setAttribute('aria-pressed', c === presetCat);
+      b.addEventListener('click', () => { presetCat = c; renderPresetList(); });
+      cats.append(b);
+    });
+    const list = $('#preset-list');
+    list.innerHTML = '';
+    const items = presetMatches();
+    if (!items.length) list.innerHTML = '<li class="empty">No preset matches. Try another word or category.</li>';
+    items.forEach(p => {
+      const li = el('li', 'preset-row');
+      li.dataset.num = p.num;
+      li.innerHTML = `<button><span class="preset-num">${String(p.num).padStart(3, '0')}</span><span class="preset-row-name">${p.name}</span><span class="preset-row-meta">${p.cat} · ${p.genre}</span></button>`;
+      li.querySelector('button').addEventListener('click', () => loadPreset(p));
+      list.append(li);
+    });
+    renderPresetBar();
+  }
+
+  const presetDrawer = $('#preset-drawer');
+  const openPresets = on => {
+    presetDrawer.classList.toggle('open', on);
+    presetDrawer.setAttribute('aria-hidden', !on);
+    if (on) { renderPresetList(); const a = presetDrawer.querySelector('.preset-row.active'); if (a) a.scrollIntoView({ block: 'center' }); }
+  };
+  $('#preset-open').addEventListener('click', () => openPresets(!presetDrawer.classList.contains('open')));
+  $('#preset-close').addEventListener('click', () => openPresets(false));
+  $('#preset-prev').addEventListener('click', () => stepPreset(-1));
+  $('#preset-next').addEventListener('click', () => stepPreset(1));
+  $('#preset-search').addEventListener('input', e => { presetQuery = e.target.value.trim().toLowerCase(); renderPresetList(); });
+  renderPresetBar();
 
   // ---------- skins ----------
   // A skin is a set of colour tokens in styles.css under [data-skin="..."]

@@ -83,3 +83,46 @@ filt   = osc : ve.moogLadder(log10(fc / 20) / 3, 0.707 + res * res * 22);
 amp = select2(vcaGate, env, en.asr(0.003, 1, 0.01, gate));
 
 process = filt * amp * vel * 0.6;
+
+//---------------------------------------------------------------------------
+// Effect after all voices are mixed: HPF, then the Juno-60 chorus.
+//
+// The chorus is a Faust port of "Junologue Chorus" by Peter Allwin
+// (https://github.com/peterall/junologue-chorus, MIT licence, see
+// ../vendor/junologue-chorus-LICENSE.txt). Delay times, LFO rates, filter
+// cutoffs, the soft limiter and the mode gains are taken from that code,
+// which builds on Juno-60 research by Andy Harman and JP Cimalando.
+// As in the original, I+II runs both choruses in parallel (like TAL U-NO-LX),
+// not the Juno-60's mono vibrato.
+//---------------------------------------------------------------------------
+hpfFreq    = hslider("hpf", 10, 10, 2000, 0.1) : sm;
+chorusMode = hslider("chorusMode", 1, 0, 3, 1);    // 0 off, 1 I, 2 II, 3 I+II
+
+softLimit(x) = x * (27 + x * x) / (27 + 9 * x * x);
+tri(f)       = (os.lf_triangle(f) + 1) / 2;         // unipolar triangle, like SimpleLFO::triangle_uni
+p1 = tri(0.513);                                    // chorus I rate
+p2 = tri(0.863);                                    // chorus II rate
+maxDelay = 512;                                     // samples, enough for 5.4 ms at 96 kHz
+tL(p) = (0.00154 + (0.00515 - 0.00154) * p) * ma.SR;
+tR(p) = (0.00151 + (0.00540 - 0.00151) * p) * ma.SR;
+gA  = ba.selectn(4, chorusMode, 0, 1, 0, 0.7071);   // chorus I share
+gB  = ba.selectn(4, chorusMode, 0, 0, 1, 0.7071);   // chorus II share
+on  = chorusMode > 0;
+dry = select2(on, 1, 0.7071);                       // depth at "12 o'clock" in the original
+wet = select2(on, 0, 0.7071);
+
+// Each chorus has a left tap swept by p and a right tap swept by 1-p
+chorus(x) = outL, outR
+with {
+  pre  = x : softLimit : fi.lowpass(1, 7375);       // pre-filter before the BBD
+  a1L  = de.fdelay(maxDelay, tL(p1), pre);
+  a1R  = de.fdelay(maxDelay, tR(1 - p1), pre);
+  a2L  = de.fdelay(maxDelay, tL(p2), pre);
+  a2R  = de.fdelay(maxDelay, tR(1 - p2), pre);
+  wL   = (a1L * gA + a2L * gB) : fi.lowpass(1, 10375);  // post-filter
+  wR   = (a1R * gA + a2R * gB) : fi.lowpass(1, 10375);
+  outL = x * dry + wL * wet;
+  outR = x * dry + wR * wet;
+};
+
+effect = fi.highpass(2, hpfFreq) : chorus;

@@ -3,8 +3,9 @@
 // by faustwasm (vendor/faustwasm.js) with six-voice polyphony. Band-limited
 // oscillators, PWM, a Moog ladder filter, envelopes and LFO all come from the
 // Faust standard libraries.
-// Global path (browser built-ins):
-//   voices -> HPF -> VCA level -> chorus (stereo) -> volume -> limiter -> speakers
+// The same Faust program holds the effect after the voices: HPF, then a
+// Juno-60 chorus ported from junologue-chorus (MIT, Peter Allwin).
+// Browser built-ins after that: VCA level -> volume -> limiter -> speakers.
 // This file owns the mapping from fader positions to real units (Hz, seconds,
 // cents); the same functions feed the DSP and the graphs in viz.js.
 
@@ -54,6 +55,8 @@
       bendVcf: P.pitchWheel * P.bendVcf * 4800,
       attack: attack(), decay: decay(), sustain: P.envS, release: release(),
       vcaGate: P.vcaMode, velEnv: P.velocityEnv,
+      hpf: hpfHz(),
+      chorusMode: P.chorus1 && P.chorus2 ? 3 : P.chorus2 ? 2 : P.chorus1 ? 1 : 0,
     };
   }
 
@@ -75,32 +78,14 @@
     ctx = new (window.AudioContext || window.webkitAudioContext)();
     const c = ctx;
 
-    g.bus = gain(1);
-    g.hpf = c.createBiquadFilter(); g.hpf.type = 'highpass';
+    g.bus = gain(1);       // Faust output (voices + HPF + chorus, stereo)
     g.level = gain(1);
-    g.dry = gain(1);
-    g.chWet = gain(0);
     g.volume = gain(0.5);
     g.limiter = c.createDynamicsCompressor();
     g.limiter.threshold.value = -6; g.limiter.ratio.value = 12; g.limiter.knee.value = 6;
     g.limiter.attack.value = 0.003; g.limiter.release.value = 0.2;
 
-    // Chorus: two modulated delays, one per stereo side, moving in opposite directions.
-    g.dl = c.createDelay(0.05); g.dr = c.createDelay(0.05);
-    g.chLfo = c.createOscillator(); g.chLfo.type = 'triangle';
-    g.chDepthL = gain(0); g.chDepthR = gain(0);
-    g.chLfo.connect(g.chDepthL).connect(g.dl.delayTime);
-    g.chLfo.connect(g.chDepthR).connect(g.dr.delayTime);
-    g.merge = c.createChannelMerger(2);
-    g.dl.connect(g.merge, 0, 0); g.dr.connect(g.merge, 0, 1);
-    g.merge.connect(g.chWet);
-    g.chLfo.start();
-
-    g.bus.connect(g.hpf).connect(g.level);
-    g.level.connect(g.dry).connect(g.volume);
-    g.level.connect(g.dl); g.level.connect(g.dr);
-    g.chWet.connect(g.volume);
-    g.volume.connect(g.limiter).connect(c.destination);
+    g.bus.connect(g.level).connect(g.volume).connect(g.limiter).connect(c.destination);
     g.analyser = c.createAnalyser(); g.analyser.fftSize = 2048; // feeds the live scope
     g.limiter.connect(g.analyser);
 
@@ -113,10 +98,11 @@
     try {
       const D = window.JUNO_DSP;
       const bytes = b64 => Uint8Array.from(atob(b64), ch => ch.charCodeAt(0));
-      const [dspModule, mixerModule] = await Promise.all([WebAssembly.compile(bytes(D.dsp)), WebAssembly.compile(bytes(D.mixer))]);
+      const [dspModule, mixerModule, effectModule] = await Promise.all([D.dsp, D.mixer, D.effect].map(b => WebAssembly.compile(bytes(b))));
       const gen = new window.FaustWasm.FaustPolyDspGenerator();
       const make = useScriptProcessor => gen.createNode(ctx, MAX_VOICES, 'juno',
-        { module: dspModule, json: JSON.stringify(D.meta), soundfiles: {} }, mixerModule, undefined, useScriptProcessor, 1024);
+        { module: dspModule, json: JSON.stringify(D.meta), soundfiles: {} }, mixerModule,
+        { module: effectModule, json: JSON.stringify(D.effectMeta), soundfiles: {} }, useScriptProcessor, 1024);
       // AudioWorklet (own audio thread) needs the page served over http(s) or
       // run inside the app. Opened from disk, Chrome refuses it, so fall back
       // to the older ScriptProcessor, which works everywhere with more latency.
@@ -136,18 +122,8 @@
   }
 
   function applyGlobals() {
-    set(g.hpf.frequency, hpfHz());
     set(g.level.gain, P.vcaLevel * 1.2);
     set(g.volume.gain, P.volume * P.volume);
-
-    // Chorus I = slow and wide, II = faster and deeper, I+II = fast shimmer
-    const c1 = P.chorus1, c2 = P.chorus2, on = c1 || c2;
-    let rate = 0.5, depth = 0.0018;
-    if (c1 && c2) { rate = 8; depth = 0.0002; } else if (c2) { rate = 0.83; depth = 0.0022; }
-    set(g.chLfo.frequency, rate);
-    set(g.chDepthL.gain, depth); set(g.chDepthR.gain, -depth);
-    set(g.dl.delayTime, 0.0035); set(g.dr.delayTime, 0.0035);
-    set(g.dry.gain, on ? 0.75 : 1); set(g.chWet.gain, on ? 0.75 : 0);
   }
 
   // ---------- voices ----------
@@ -203,13 +179,16 @@
 
   function panic() {
     held = []; sounding = []; pending = [];
-    if (faust) faust.allNotesOff(true);
+    // soft: voices fade out and are freed by faustwasm; a hard stop frees them
+    // mid-release, and a voice reused that way may not restart its envelope
+    if (faust) faust.allNotesOff(false);
   }
 
   function setParam(id, value) {
+    const changed = P[id] !== value;
     P[id] = value;
     if (!ctx) return;
-    if (id === 'ml' || id === 'gml') panic();
+    if ((id === 'ml' || id === 'gml') && changed) panic();
     applyGlobals();
     pushDsp();
   }
