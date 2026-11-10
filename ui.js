@@ -34,6 +34,7 @@
   function setValue(id, value) {
     S.setParam(id, value);
     controlIndex[id].render();
+    if (window.Arp) Arp.paramChanged(id);
     if (id === 'lfoTempo' && controlIndex.lfoRate) controlIndex.lfoRate.render();
     clearTimeout(savePatchTimer);
     savePatchTimer = setTimeout(() => {
@@ -209,10 +210,40 @@
       btn.addEventListener('click', () => {
         if (commentMode) return;
         S.panic();
+        if (window.Arp) Arp.stopAll();
         wrap.classList.add('on');
         setTimeout(() => wrap.classList.remove('on'), 250);
       });
       return { node: wrap, render: () => {} };
+    },
+
+    tempo(c) {
+      const wrap = el('div', 'ctl ctl-tempo');
+      const box = el('div', 'stepper');
+      const lcd = el('div', 'lcd lcd-num tempo-lcd');
+      lcd.tabIndex = 0;
+      lcd.setAttribute('role', 'slider');
+      lcd.setAttribute('aria-label', c.label);
+      lcd.title = 'Drag up/down or scroll. Double-click: 120';
+      const tap = el('button', 'step-btn tap-btn', 'Tap');
+      box.append(lcd, tap);
+      wrap.append(box, el('div', 'ctl-label', c.label));
+      const render = () => { lcd.textContent = Math.round(S.params[c.id]); lcd.setAttribute('aria-valuenow', S.params[c.id]); };
+      dragInput(lcd, () => S.params[c.id], v => setValue(c.id, Math.round(v)), { range: 300, min: c.min, max: c.max });
+      lcd.addEventListener('dblclick', () => setValue(c.id, defaults[c.id]));
+      let taps = [];
+      tap.addEventListener('click', () => {
+        if (commentMode) return;
+        const now = performance.now();
+        if (taps.length && now - taps[taps.length - 1] > 2000) taps = [];
+        taps.push(now);
+        taps = taps.slice(-5);
+        if (taps.length >= 2) {
+          const avg = (taps[taps.length - 1] - taps[0]) / (taps.length - 1);
+          setValue(c.id, clamp(Math.round(60000 / avg), c.min, c.max));
+        }
+      });
+      return { node: wrap, render };
     },
 
     wheel(c) {
@@ -252,17 +283,33 @@
 
   // ---------- render rack ----------
   const rack = $('#rack');
-  [1, 2].forEach(rowNo => {
+  const arpRack = $('#arp-rack');
+  const mainEl = document.querySelector('main');
+  let notesReady = false;
+
+  // Arp needs a few helpers from here; init before its pattern editor is drawn
+  window.Arp.init({
+    el, store, toast, setValue,
+    isCommenting: () => commentMode,
+    flashKey: (note, dur) => flashKey(note, dur),
+    setHandle: (text, lit, rec) => setArpHandle(text, lit, rec),
+    registerTarget: (id, label, sectionTitle) => { controlIndex[id] = { def: { label }, section: { title: sectionTitle }, render() {} }; },
+    refreshNotes: () => { if (notesReady) renderNotes(); },
+  });
+
+  // Width share of a section = sum of how much room its controls need
+  const W = { slider: 1, knob: 1.3, wheel: 2.6, toggle: 0.9, switch: 0.9, select: 1, stepper: 1.3, button: 1, tempo: 1.8 };
+
+  function renderRow(rowId, container) {
     const row = el('div', 'rack-row');
-    window.PANEL.filter(s => s.row === rowNo).forEach(s => {
+    window.PANEL.filter(s => s.row === rowId).forEach(s => {
       const sec = el('section', `module accent-${s.accent}`);
       sec.dataset.cid = s.id;
-      // Width share of a section = sum of how much room its controls need
-      const W = { slider: 1, knob: 1.3, wheel: 2.6, toggle: 0.9, switch: 0.9, select: 1, stepper: 1.3, button: 1 };
-      sec.style.setProperty('--weight', s.controls.reduce((sum, c) => sum + (c.group ? W[c.type] * 0.7 : W[c.type]), 0).toFixed(1));
+      sec.style.setProperty('--weight', s.custom ? 40 : s.controls.reduce((sum, c) => sum + (c.group ? W[c.type] * 0.7 : W[c.type]), 0).toFixed(1));
       const head = el('header', 'module-head', `<h3>${s.title}</h3>`);
       head.dataset.cid = s.id;
       const body = el('div', 'module-body');
+      if (s.custom === 'pattern') window.Arp.renderPattern(body);
       let groupBox = null;
       s.controls.forEach(c => {
         const built = builders[c.type](c);
@@ -284,8 +331,13 @@
       sec.append(head, body);
       row.append(sec);
     });
-    rack.append(row);
-  });
+    container.append(row);
+  }
+  renderRow(1, rack);
+  renderRow(2, rack);
+  renderRow('arp1', arpRack);
+  renderRow('arp2', arpRack);
+
   // Section headers are commentable too
   window.PANEL.forEach(s => { controlIndex[s.id] = { def: { label: s.title }, section: null, render() {} }; });
 
@@ -324,8 +376,45 @@
     const k = kb.querySelector(`[data-note="${note}"]`);
     if (k) k.classList.toggle('down', on);
   }
-  const play = (note, vel) => { if (pressed.has(note)) return; pressed.set(note, true); markKey(note, true); S.noteOn(note, vel); updateAudioStatus(); };
-  const stop = note => { if (!pressed.has(note)) return; pressed.delete(note); markKey(note, false); S.noteOff(note); };
+  // Keys go to the arpeggiator first; it decides whether they sound directly
+  const play = (note, vel) => {
+    if (pressed.has(note)) return;
+    pressed.set(note, true); markKey(note, true);
+    if (!Arp.keyDown(note, vel)) S.noteOn(note, vel);
+    updateAudioStatus();
+  };
+  const stop = note => {
+    if (!pressed.has(note)) return;
+    pressed.delete(note); markKey(note, false);
+    if (!Arp.keyUp(note)) S.noteOff(note);
+  };
+
+  // Light a key while the arpeggiator plays it
+  const flashTimers = {};
+  function flashKey(note, dur) {
+    const k = kb.querySelector(`[data-note="${note}"]`);
+    if (!k) return;
+    k.classList.add('arp');
+    clearTimeout(flashTimers[note]);
+    flashTimers[note] = setTimeout(() => k.classList.remove('arp'), Math.max(60, dur * 1000));
+  }
+
+  // ---------- arpeggiator fold-out ----------
+  const arpPanel = $('#arp-panel'), arpToggle = $('#arp-toggle');
+  function openArp(open) {
+    arpPanel.classList.toggle('open', open);
+    arpPanel.inert = !open;
+    arpToggle.setAttribute('aria-expanded', open);
+    store.set('juno-arp-open-v1', open);
+  }
+  arpToggle.addEventListener('click', () => { if (!commentMode) openArp(!arpPanel.classList.contains('open')); });
+  function setArpHandle(text, lit, rec) {
+    // queried here because Arp.init() calls this before the consts below exist
+    const handle = $('#arp-toggle');
+    $('#arp-handle-state').textContent = text;
+    handle.classList.toggle('lit', lit);
+    handle.classList.toggle('rec', !!rec);
+  }
 
   let mouseNote = null;
   kb.addEventListener('pointerdown', e => {
@@ -410,6 +499,7 @@
     if (d.options) return d.options[v];
     if (d.type === 'toggle') return v ? 'on' : 'off';
     if (d.type === 'stepper') return String(v);
+    if (d.type === 'tempo') return Math.round(v) + ' BPM';
     if (d.id === 'volume') return Math.round(v * 100) + ' %';
     return S.format(id, v);
   };
@@ -424,13 +514,13 @@
   $('#btn-comment').addEventListener('click', () => setCommentMode(!commentMode));
 
   // Capture clicks before the controls see them
-  rack.addEventListener('click', e => {
+  [rack, arpRack].forEach(container => container.addEventListener('click', e => {
     if (!commentMode) return;
     const target = e.target.closest('[data-cid]');
     if (!target) return;
     e.preventDefault(); e.stopPropagation();
     openPopover(target.dataset.cid, target);
-  }, true);
+  }, true));
 
   const pop = $('#popover');
   let popTarget = null, editId = null;
@@ -492,7 +582,7 @@
     document.querySelectorAll('.has-note').forEach(n => n.classList.remove('has-note'));
     notes.forEach(n => {
       if (!n.target) return;
-      const node = rack.querySelector(`[data-cid="${n.target}"]`);
+      const node = mainEl.querySelector(`[data-cid="${n.target}"]`);
       if (node) node.classList.add('has-note');
     });
     const list = $('#notes-list');
@@ -509,10 +599,10 @@
           if (t != null && t.trim()) { n.text = t.trim(); saveNotes(); }
           return;
         }
-        const anchor = rack.querySelector(`[data-cid="${n.target}"]`);
+        const anchor = mainEl.querySelector(`[data-cid="${n.target}"]`);
         if (anchor) { openDrawer(false); anchor.scrollIntoView({ block: 'center' }); openPopover(n.target, anchor, n); }
       });
-      li.addEventListener('mouseenter', () => { const a = n.target && rack.querySelector(`[data-cid="${n.target}"]`); if (a) a.classList.add('note-hover'); });
+      li.addEventListener('mouseenter', () => { const a = n.target && mainEl.querySelector(`[data-cid="${n.target}"]`); if (a) a.classList.add('note-hover'); });
       li.addEventListener('mouseleave', () => document.querySelectorAll('.note-hover').forEach(x => x.classList.remove('note-hover')));
       list.append(li);
     });
@@ -574,6 +664,9 @@
     toastTimer = setTimeout(() => { t.hidden = true; }, 2600);
   }
 
+  notesReady = true;
   renderNotes();
   updateAudioStatus();
+  openArp(store.get('juno-arp-open-v1', false));
+  Arp.updateHandle();
 })();

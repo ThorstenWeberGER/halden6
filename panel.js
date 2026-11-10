@@ -11,6 +11,10 @@
 //   stepper number with - / +
 //   button  momentary action
 //   wheel   pitch wheel, -1..1, springs back to 0
+//   tempo   BPM display: drag or scroll to change, TAP button
+//
+// Rows 1 and 2 are the main panel; rows 'arp1' and 'arp2' live in the
+// fold-out arpeggiator. A section with `custom` is drawn by its own code.
 //
 // Controls next to each other with the same `group` stay side by side.
 
@@ -98,5 +102,34 @@ window.PANEL = [
       { id: 'envS', type: 'slider', label: 'S', value: 0.6 },
       { id: 'envR', type: 'slider', label: 'R', value: 0.35 },
     ],
+  },
+  // ---------- arpeggiator (fold-out panel) ----------
+  {
+    id: 'arpMain', title: 'ARP', accent: 'blue', row: 'arp1',
+    controls: [
+      { id: 'arpOn', type: 'toggle', label: 'On', color: 'yellow', value: 0 },
+      { id: 'arpMode', type: 'switch', label: 'Mode', options: ['Arp', 'Pattern'], value: 0 },
+      { id: 'arpLatch', type: 'toggle', label: 'Latch', color: 'orange', value: 0 },
+    ],
+  },
+  {
+    id: 'arpClock', title: 'Clock', accent: 'blue', row: 'arp1',
+    controls: [
+      { id: 'bpm', type: 'tempo', label: 'BPM', min: 40, max: 240, value: 120 },
+      { id: 'arpRate', type: 'select', label: 'Rate', options: ['1/4', '1/8', '1/8T', '1/16', '1/16T', '1/32'], value: 3 },
+      { id: 'arpSwing', type: 'knob', label: 'Swing', value: 0 },
+    ],
+  },
+  {
+    id: 'arpPlay', title: 'Arp Mode', accent: 'red', row: 'arp1',
+    controls: [
+      { id: 'arpOrder', type: 'select', label: 'Order', options: ['up', 'down', 'up-dn', 'random', 'played'], value: 0 },
+      { id: 'arpOctaves', type: 'stepper', label: 'Octaves', min: 1, max: 4, value: 1 },
+      { id: 'arpGate', type: 'knob', label: 'Gate', value: 0.7 },
+    ],
+  },
+  {
+    id: 'arpPattern', title: 'Pattern', accent: 'red', row: 'arp2', custom: 'pattern',
+    controls: [],
   },
 ];

@@ -18,6 +18,23 @@ Click once anywhere to start audio, then play with the mouse or the keyboard.
 
 Works fully offline: fonts are bundled in `fonts/` (SIL Open Font License).
 
+## Arpeggiator
+
+Click the **Arpeggiator** bar between the panel and the keys to fold it open.
+Switch **On**, then choose a mode:
+
+- **Arp** plays the keys you hold: order (up, down, up-down, random, as played),
+  1 to 4 octaves, gate length.
+- **Pattern** plays a 16-step pattern. Hold C4 to hear it as written; any other
+  key transposes it. Edit each step: click the number for note or rest, drag the
+  note up or down, drag the velocity and gate bars, set Tie to hold into the next step.
+- **Record**: press **Rec**, then play one key per step (**Rest** adds a pause).
+  Press **Rec** again to finish; the pattern length becomes the number of steps recorded.
+- **Latch** keeps it playing after you let go. **BPM** (drag, scroll or **Tap**)
+  also drives LFO tempo sync. **Swing** delays every second step.
+- **Slots**: pick one of 8 slots, type a name, **Save**. **Load** brings back the
+  pattern with its BPM and rate. Slots and the current pattern survive a reload.
+
 ## Skins
 
 Switch with **Studio / Neon / Daylight** in the top bar; the choice is remembered.
@@ -40,6 +57,7 @@ them on the clipboard to paste straight into the chat.
 |---|---|
 | `panel.js` | Every section and control. Add or move a control here. |
 | `synth.js` | Web Audio sound engine. |
+| `arp.js` | Arpeggiator: clock, modes, recording, pattern editor, slots. |
 | `ui.js` | Rendering, input, keyboard, comment mode. |
 | `styles.css` | Look, layout and skins. |
 | `fonts/` | Bundled font files and their licences. |
@@ -54,6 +72,5 @@ These are not clear from the reference image and are open for discussion:
 - **DCO switches**: first = PWM source (LFO or ENV), second = PWM modulation on/off.
   Off makes the PWM fader a fixed pulse width.
 - **ML / G-ML**: mono legato, and mono legato with glide (fixed 80 ms).
-- **LFO Tempo**: syncs to a fixed 120 BPM, since a browser has no host tempo.
 - **Pitch wheel section** is labelled "Performance"; the bend faders are
   "Bend DCO" (up to 12 semitones) and "Bend VCF".

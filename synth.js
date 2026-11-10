@@ -12,7 +12,6 @@
 
   const LFO_WAVES = ['sine', 'triangle', 'sawtooth', 'square'];
   const TEMPO_BEATS = [0, 4, 2, 1, 0.5, 0.25]; // '----', 1/1, 1/2, 1/4, 1/8, 1/16
-  const BPM = 120; // fixed for the mock; a host tempo would replace this in the app
 
   let ctx = null;
   const g = {};         // global nodes
@@ -31,7 +30,7 @@
   const isMono = () => !!(P.ml || P.gml);
   const velScale = v => 1 - P.velocityEnv * (1 - v.vel);
   const lfoRateHz = () => P.lfoTempo > 0
-    ? (BPM / 60) / TEMPO_BEATS[P.lfoTempo]
+    ? ((P.bpm || 120) / 60) / TEMPO_BEATS[P.lfoTempo]
     : expMap(P.lfoRate, 0.1, 20);
 
   // ---------- small helpers ----------
@@ -196,8 +195,8 @@
     param.setTargetAtTime(peak * P.envS, t + attack(), decay() / 4);
   }
 
-  function envOn(v) {
-    const t = ctx.currentTime, peak = 0.5 * velScale(v);
+  function envOn(v, t) {
+    const peak = 0.5 * velScale(v);
     rampEnv(v.envGain.gain, t, 1);
     if (P.vcaMode === 0) rampEnv(v.vca.gain, t, peak);
     else { hold(v.vca.gain, t); v.vca.gain.linearRampToValueAtTime(peak, t + 0.003); }
@@ -206,23 +205,25 @@
     v.lfoFade.gain.linearRampToValueAtTime(1, t + Math.max(0.001, P.lfoDelay * 3));
   }
 
-  function releaseVoice(v) {
-    if (v.releasing) return;
-    const t = ctx.currentTime, R = release();
+  // Release a voice at time `when` (audio clock), default now
+  function releaseVoice(v, when) {
+    if (v.releasing || v.dead) return;
+    const now = ctx.currentTime, t = Math.max(now, when || now), R = release();
     v.releasing = true;
     hold(v.envGain.gain, t); v.envGain.gain.setTargetAtTime(0, t, R / 4);
     hold(v.vca.gain, t);
     let end;
     if (P.vcaMode === 0) { v.vca.gain.setTargetAtTime(0, t, R / 4); end = R * 1.5 + 0.05; }
     else { v.vca.gain.linearRampToValueAtTime(0, t + 0.01); end = 0.05; }
-    v.timer = setTimeout(() => killVoice(v), end * 1000);
+    v.timer = setTimeout(() => killVoice(v), (t - now + end) * 1000);
   }
 
   // Remove a voice. fast = short fade first (voice stealing, panic).
   function killVoice(v, fast) {
     const i = voices.indexOf(v);
     if (i >= 0) voices.splice(i, 1);
-    clearTimeout(v.timer);
+    clearTimeout(v.timer); clearTimeout(v.offTimer);
+    v.dead = true;
     const stop = () => {
       [v.saw, v.sub, v.env, v.lfo, v.noise].forEach(n => { if (n) { try { n.stop(); } catch (e) {} } });
       g.pitch.disconnect(v.pitchIn); g.vcfBend.disconnect(v.bendIn);
@@ -236,8 +237,8 @@
     } else stop();
   }
 
-  function glideTo(v, note) {
-    const t = ctx.currentTime, f = mtof(note);
+  function glideTo(v, note, when) {
+    const t = Math.max(ctx.currentTime, when || 0), f = mtof(note);
     v.note = note; v.freq = f;
     if (P.gml) {
       v.saw.frequency.setTargetAtTime(f, t, 0.03);
@@ -250,34 +251,57 @@
   }
 
   // ---------- public note API ----------
-  function noteOn(note, vel = 0.8) {
-    start();
-    if (isMono()) {
-      held = held.filter(n => n !== note); held.push(note);
-      if (monoVoice && !monoVoice.releasing) { glideTo(monoVoice, note); return; }
-      monoVoice = makeVoice(note, vel); voices.push(monoVoice); envOn(monoVoice);
-      return;
-    }
-    voices.filter(v => v.note === note && !v.releasing).forEach(releaseVoice);
+  // `when` is an audio-clock time for sample-exact timing (used by the arpeggiator).
+  function stealIfFull() {
     while (voices.length >= P.voices) {
       const victim = voices.find(v => v.releasing) || voices[0];
       killVoice(victim, true);
     }
-    const v = makeVoice(note, vel);
-    voices.push(v); envOn(v);
   }
 
-  function noteOff(note) {
+  function noteOn(note, vel = 0.8, when) {
+    start();
+    const t = Math.max(ctx.currentTime, when || 0);
+    if (isMono()) {
+      held = held.filter(n => n !== note); held.push(note);
+      if (monoVoice && !monoVoice.releasing && !monoVoice.dead) { glideTo(monoVoice, note, t); return; }
+      monoVoice = makeVoice(note, vel); voices.push(monoVoice); envOn(monoVoice, t);
+      return;
+    }
+    voices.filter(v => v.note === note && !v.releasing).forEach(v => releaseVoice(v, t));
+    stealIfFull();
+    const v = makeVoice(note, vel);
+    voices.push(v); envOn(v, t);
+  }
+
+  function noteOff(note, when) {
     if (!ctx) return;
+    const t = Math.max(ctx.currentTime, when || 0);
     if (isMono()) {
       const wasTop = held[held.length - 1] === note;
       held = held.filter(n => n !== note);
       if (!monoVoice) return;
-      if (held.length && wasTop) glideTo(monoVoice, held[held.length - 1]);
-      else if (!held.length) { releaseVoice(monoVoice); monoVoice = null; }
+      if (held.length && wasTop) glideTo(monoVoice, held[held.length - 1], t);
+      else if (!held.length) { releaseVoice(monoVoice, t); monoVoice = null; }
       return;
     }
-    voices.filter(v => v.note === note && !v.releasing).forEach(releaseVoice);
+    voices.filter(v => v.note === note && !v.releasing).forEach(v => releaseVoice(v, t));
+  }
+
+  // One note with a fixed length, starting at `when`. Overlapping notes of the
+  // same pitch stay separate voices, so tied arp steps do not cut each other.
+  function trigger(note, vel, when, dur) {
+    start();
+    const now = ctx.currentTime, t = Math.max(now, when), wait = Math.max(0, (t + dur - now - 0.03) * 1000);
+    if (isMono()) {
+      noteOn(note, vel, t);
+      setTimeout(() => noteOff(note, t + dur), wait);
+      return;
+    }
+    stealIfFull();
+    const v = makeVoice(note, vel);
+    voices.push(v); envOn(v, t);
+    v.offTimer = setTimeout(() => releaseVoice(v, t + dur), wait);
   }
 
   function panic() {
@@ -309,12 +333,15 @@
       case 'tune': return (v >= 0 ? '+' : '') + Math.round(v * 100) + ' ct';
       case 'bendDco': return (v * 12).toFixed(1) + ' st';
       case 'pitchWheel': return (v >= 0 ? '+' : '') + v.toFixed(2);
+      case 'arpGate': return Math.round(5 + v * 95) + ' %';
+      case 'arpSwing': return Math.round(v * 100) + ' %';
       default: return (v * 10).toFixed(1);
     }
   }
 
   window.Synth = {
-    start, noteOn, noteOff, panic, setParam, format, params: P,
+    start, noteOn, noteOff, trigger, panic, setParam, format, params: P,
+    now: () => (ctx ? ctx.currentTime : 0),
     state: () => (ctx ? ctx.state : 'off'),
   };
 })();
