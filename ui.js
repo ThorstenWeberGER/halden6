@@ -295,7 +295,7 @@
 
   // ---------- render rack ----------
   const rack = $('#rack');
-  window.Tattoo.mount(rack); // artwork behind the main panel
+  window.Backdrop.mount(rack); // octagon backdrop behind the main panel
   const arpRack = $('#arp-rack');
   const mainEl = document.querySelector('main');
   let notesReady = false;
