@@ -11,6 +11,15 @@ it is done.
       Claude to open a pull request for it). Releases and the README links
       assume the work is on `main`.
 
+## 1b. Put the web version online (for your phone)
+
+- [ ] Repository Settings > Pages > Build and deployment > Source:
+      **GitHub Actions** (one-time).
+- [ ] After the merge into `main`, the "Web version on GitHub Pages" workflow
+      publishes it (or run it by hand under Actions). Open
+      https://thorstenweberger.github.io/halden6/ on your phone and tap once
+      to start audio.
+
 ## 2. Install the plugin on your Windows machine
 
 - [ ] Easiest: open the latest green run under the repository's
@@ -74,6 +83,4 @@ Note what happens for each; a short line per item is enough.
 
 ## Later, optional
 
-- [ ] Host the web version on GitHub Pages (served over HTTPS, it gets the
-      lower-latency audio path automatically).
 - [ ] MIDI output from the arp, so it can play other instruments in Live.

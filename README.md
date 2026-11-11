@@ -16,6 +16,10 @@ to WebAssembly. No install, no server, no account.
 
 ## Run it
 
+On any device, phone included: **https://thorstenweberger.github.io/halden6/**
+(published from `main` by `.github/workflows/pages.yml`). Tap once to start
+audio, then play the on-screen keys.
+
 Open `index.html` in Chrome or Edge (double-click works, no server or install).
 Click once anywhere to start audio, then play with the mouse or the keyboard.
 
