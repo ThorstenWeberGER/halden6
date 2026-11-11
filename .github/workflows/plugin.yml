@@ -1,0 +1,47 @@
+# Builds the VST3 plugin on Windows with the same installer users run, and
+# checks that the plugin and the web version still agree.
+name: Plugin
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-build:
+    name: Windows build
+    # Pinned: the installer builds with Visual Studio 2022
+    runs-on: windows-2022
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build with install.ps1 (build only, no install)
+        # Windows PowerShell 5.1, as install.cmd uses
+        shell: powershell
+        run: .\install.ps1 -BuildOnly -Yes
+      - name: Keep the plugin zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: Halden6-vst3-windows
+          path: build/Halden6-vst3-*.zip
+          if-no-files-found: error
+
+  checks:
+    name: Plugin and web version agree
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install the Faust build tools (for the web engine and the comparison)
+        working-directory: dsp
+        run: npm ci
+      - name: Generated parameters match panel.js
+        run: node plugin/tools/generate.mjs --check
+      - name: Mappings and sound match between plugin and web version
+        run: node plugin/tools/check.mjs
