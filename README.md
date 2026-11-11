@@ -108,16 +108,6 @@ in `backdrop.js`; each skin sets its colours and strength with the `--bd-*`
 tokens in `styles.css`. Tiles stop pulsing when the system asks for reduced
 motion.
 
-## Discuss changes with Claude
-
-1. Click **Comment mode**, then click any control or section header and type a note.
-2. Click **Notes**, then **Save notes file**, and save as `Halden6/notes/halden6-notes.md`.
-3. Tell Claude to read the notes. The file lists each note, the control's value
-   at the time, and the full patch.
-
-Notes also stay in the browser between sessions. **Copy as Markdown** puts
-them on the clipboard to paste straight into the chat.
-
 ## How it fits together
 
 One set of source files drives two products: the web page and the VST3 plugin.
@@ -181,7 +171,7 @@ Windows build and pluginval.
 | `backdrop.js` | Octagon backdrop behind the main panel, coloured per skin. |
 | `arp.js` | Arpeggiator: clock, modes, recording, pattern editor, slots. |
 | `arp-patterns.js` | The example pattern and the 7 factory patterns, shared with the plugin. |
-| `ui.js` | Rendering, input, keyboard, comment mode. |
+| `ui.js` | Rendering, input, keyboard. |
 | `styles.css` | Look, layout and skins. |
 | `fonts/` | Bundled font files and their licences. |
 | `docs/` | README images, the script that renders them, the plugin plan, the next-steps checklist, and a guideline for building another plugin this way. |

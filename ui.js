@@ -613,11 +613,13 @@
   function setCommentMode(on) {
     commentMode = on;
     document.body.classList.toggle('commenting', on);
-    $('#btn-comment').setAttribute('aria-pressed', on);
+    $('#btn-comment')?.setAttribute('aria-pressed', on);
     if (!on) closePopover();
     if (on) toast('Comment mode: click any control or section header. Esc to exit.');
   }
-  $('#btn-comment').addEventListener('click', () => setCommentMode(!commentMode));
+  // The Comment mode and Notes buttons were taken out of the top bar; the
+  // code stays so they can come back by adding the buttons to index.html
+  $('#btn-comment')?.addEventListener('click', () => setCommentMode(!commentMode));
 
   // Capture clicks before the controls see them
   [rack, arpRack].forEach(container => container.addEventListener('click', e => {
@@ -670,7 +672,7 @@
   // ---------- notes drawer ----------
   const drawer = $('#drawer');
   const openDrawer = on => { drawer.classList.toggle('open', on); drawer.setAttribute('aria-hidden', !on); };
-  $('#btn-notes').addEventListener('click', () => openDrawer(!drawer.classList.contains('open')));
+  $('#btn-notes')?.addEventListener('click', () => openDrawer(!drawer.classList.contains('open')));
   $('#drawer-close').addEventListener('click', () => openDrawer(false));
 
   $('#general-add').addEventListener('click', () => {
@@ -684,7 +686,7 @@
   function esc(s) { return s.replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch])); }
 
   function renderNotes() {
-    $('#notes-count').textContent = notes.length;
+    if ($('#notes-count')) $('#notes-count').textContent = notes.length;
     document.querySelectorAll('.has-note').forEach(n => n.classList.remove('has-note'));
     notes.forEach(n => {
       if (!n.target) return;
