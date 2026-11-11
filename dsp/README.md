@@ -1,8 +1,9 @@
 # Halden 6 sound engine (Faust)
 
 `halden6.dsp` is the synth voice (oscillators, PWM, sub, noise, Moog ladder filter,
-envelope, LFO) plus the effect after the voices: HPF and the Juno-60 chorus. It is written in [Faust](https://faust.grame.fr) and uses only
-blocks from the Faust standard libraries, so there is no hand-written DSP.
+envelope, LFO) plus the effect after the voices: HPF, the Juno-60 chorus, output gain
+and a peak limiter. It is written in [Faust](https://faust.grame.fr) and built from
+blocks of the Faust standard libraries.
 
 | File | What it is |
 |---|---|

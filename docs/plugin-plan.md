@@ -84,7 +84,6 @@ playing the same patch.
   **Parameter IDs never change after the first release**, otherwise old Live sets break.
 - Port the value mappings from `synth.js` to C++. The output gain and the limiter
   already live in `halden6.dsp`, so the plugin gets them for free.
-  from `synth.js` to C++ (or into Faust).
 - Mono and glide (ML, G-ML), velocity, pitch wheel from MIDI.
 - Save and restore the full patch in the Live set.
 
