@@ -212,6 +212,9 @@
       // ladder resonance expressed as a biquad Q (dB) for the filter graph
       resQ: () => 20 * Math.log10(ladderQ()),
     },
+    // Faust control values for the current panel; plugin/tools/check.mjs
+    // compares them with the plugin's C++ copy
+    dspValues,
     state: () => (ctx ? (faust && ctx.currentTime > 0 ? ctx.state : 'loading') : 'off'),
     engine: () => engineMode,
   };

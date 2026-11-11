@@ -130,14 +130,19 @@ them on the clipboard to paste straight into the chat.
 | `styles.css` | Look, layout and skins. |
 | `fonts/` | Bundled font files and their licences. |
 | `docs/` | README images, the script that renders them, and the plugin plan. |
+| `plugin/` | The VST3 plugin (JUCE, C++). See `plugin/README.md`. |
+| `install.cmd`, `install.ps1` | Build and install the plugin on Windows. |
 
 Plain HTML, CSS and JavaScript with no build step.
 
-## Next: a VST3 plugin for Ableton Live
+## VST3 plugin for Ableton Live (in progress)
 
-The plan is to ship Halden 6 as an open-source VST3 instrument for Ableton Live
-on Windows, built with JUCE. It will reuse this panel and the same Faust sound
-engine, and the web version stays. See [docs/plugin-plan.md](docs/plugin-plan.md).
+Halden 6 is becoming an open-source VST3 instrument for Ableton Live on
+Windows, built with JUCE from the same Faust sound engine. It already plays,
+records automation and saves its patch in the Live set; the Halden 6 panel
+inside the plugin comes next. To try it, double-click `install.cmd` in a clone
+of this repository. See [plugin/README.md](plugin/README.md) and
+[docs/plugin-plan.md](docs/plugin-plan.md).
 
 ### Refresh the README images
 

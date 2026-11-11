@@ -19,13 +19,14 @@ The peak limiter in `dsp/halden6.dsp` is written out in this repository. It
 follows the same idea as Faust's `co.limiter_lad_N`, but does not use that
 function, which is GPL-3.0-only.
 
-## Planned for the plugin (not in the repository yet)
+## Plugin
 
-| Component | Licence | Note |
-|---|---|---|
-| JUCE 8 | AGPLv3 (or commercial) | The reason the whole repository is AGPL-3.0. |
-| VST 3 SDK (via JUCE) | MIT since version 3.8 | |
-| Microsoft WebView2 SDK | To be checked before phase 3 | See the open question in `docs/plugin-plan.md`. |
+| Component | Where | Licence | Note |
+|---|---|---|---|
+| JUCE 8.0.9 | `plugin/JUCE` (git submodule) | AGPLv3 (or commercial) | The reason the whole repository is AGPL-3.0. |
+| VST 3 SDK | Inside JUCE | MIT since version 3.8 | |
+| Faust standard libraries | Compiled into `plugin/Source/generated/` | MIT and STK-4.3 | Same libraries as the web version. |
+| Microsoft WebView2 SDK | Not used yet | To be checked before phase 3 | See the open question in `docs/plugin-plan.md`. |
 
 faustwasm is used by the web version only. The plugin compiles the same Faust
 source to C++ instead.
