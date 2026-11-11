@@ -27,6 +27,7 @@
   let gesture = null;
 
   function setParam(id, value) {
+    if (id === 'bpm') return; // the tempo is Live's
     if (P[id] === value) return;
     P[id] = value;
     if (id === 'pitchWheel') send({ type: 'wheel', value });
@@ -63,7 +64,16 @@
       window.dispatchEvent(new CustomEvent('halden6-preset', { detail: msg }));
     });
     backend.addEventListener('host', msg => {
-      if (msg.bpm && msg.bpm !== P.bpm) { P.bpm = msg.bpm; if (window.Viz) window.Viz.update(); }
+      if (msg.bpm && msg.bpm !== P.bpm) {
+        P.bpm = msg.bpm;
+        window.dispatchEvent(new CustomEvent('halden6-param', { detail: { id: 'bpm' } }));
+      }
+    });
+    // The arpeggiator runs in the plugin: show where it is in the pattern
+    backend.addEventListener('arp', msg => { if (window.Arp) window.Arp.showPlayhead(msg.step); });
+    // Keys played in Live, for step recording
+    backend.addEventListener('midiNotes', msg => {
+      if (window.Arp && window.Arp.isRecording()) msg.notes.forEach(([note, vel]) => window.Arp.keyDown(note, vel));
     });
   }
 
@@ -85,6 +95,10 @@
     // The preset shown in the panel, saved with the Live set
     initialPreset: ((window.__JUCE__ && window.__JUCE__.initialisationData && window.__JUCE__.initialisationData.preset) || [])[0] || null,
     presetChanged: (num, edited) => send({ type: 'preset', num, edited }),
+    // The arpeggiator's pattern and slots, saved with the Live set
+    initialArp: () => ((window.__JUCE__ && window.__JUCE__.initialisationData && window.__JUCE__.initialisationData.arp) || [])[0] || { pattern: null, slots: null },
+    setArpPattern: pattern => send({ type: 'arpPattern', json: JSON.stringify(pattern) }),
+    setArpSlots: slots => send({ type: 'arpSlots', json: JSON.stringify(slots) }),
     beginGesture(id) { if (pluginIds.has(id)) { gesture = id; send({ type: 'gesture', id, on: true }); } },
     endGesture(id) { if (gesture === id) { gesture = null; send({ type: 'gesture', id, on: false }); } },
     format: M.format,

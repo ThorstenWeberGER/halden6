@@ -37,6 +37,12 @@ public:
     void noteOff (int note);
     void panic();
 
+    // A note from the arpeggiator: keyed on and off as it is, with the Voices
+    // limit and mono modes, but without the retrigger and note-stack rules of
+    // a played key (as Synth.trigger in synth.js)
+    void triggerOn (int note, float velocity) { keyOn (note, velocity); }
+    void triggerOff (int note) { keyOff (note); }
+
     // Adds nothing: writes numSamples of stereo output (n <= maxBlock)
     void render (float* left, float* right, int numSamples);
 

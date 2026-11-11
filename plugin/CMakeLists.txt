@@ -47,7 +47,8 @@ juce_add_plugin(Halden6
 target_sources(Halden6 PRIVATE
   Source/PluginProcessor.cpp
   Source/PluginEditor.cpp
-  Source/Engine.cpp)
+  Source/Engine.cpp
+  Source/Arp.cpp)
 
 # The web panel, packed into the plugin. The same files as the web version,
 # except synth.js (the browser sound engine), which web/bridge.js replaces.
@@ -57,7 +58,7 @@ juce_add_binary_data(Halden6WebUI
   NAMESPACE Halden6WebUI
   SOURCES
     ${R}/index.html ${R}/styles.css ${R}/panel.js ${R}/mapping.js ${R}/presets.js
-    ${R}/arp.js ${R}/viz.js ${R}/backdrop.js ${R}/ui.js
+    ${R}/arp-patterns.js ${R}/arp.js ${R}/viz.js ${R}/backdrop.js ${R}/ui.js
     ${R}/fonts/fonts.css ${R}/fonts/inter-variable.woff2 ${R}/fonts/jetbrains-mono-variable.woff2
     ${R}/fonts/barlow-condensed-500.woff2 ${R}/fonts/barlow-condensed-600.woff2 ${R}/fonts/barlow-condensed-700.woff2
     ${CMAKE_CURRENT_SOURCE_DIR}/web/bridge.js)
@@ -99,7 +100,7 @@ if(HALDEN6_HOST_TEST)
   juce_add_console_app(Halden6PanelTest PRODUCT_NAME "Halden6PanelTest" NEEDS_WEB_BROWSER TRUE)
   # Compiles the plugin's own sources into the app, so the test can reach the panel
   target_sources(Halden6PanelTest PRIVATE tools/paneltest.cpp
-    Source/PluginProcessor.cpp Source/PluginEditor.cpp Source/Engine.cpp)
+    Source/PluginProcessor.cpp Source/PluginEditor.cpp Source/Engine.cpp Source/Arp.cpp)
   target_compile_definitions(Halden6PanelTest PRIVATE
     JucePlugin_Name="Halden 6" JUCE_WEB_BROWSER=1 JUCE_USE_CURL=0 JUCE_MODAL_LOOPS_PERMITTED=1)
   target_link_libraries(Halden6PanelTest PRIVATE Halden6WebUI

@@ -75,6 +75,52 @@ juce::MidiBuffer chord (std::initializer_list<int> notes, bool on)
     return m;
 }
 
+// A host transport: playing from beat `start` at 120 BPM, moved on by each block
+struct Transport : juce::AudioPlayHead
+{
+    double sampleRate = 48000, bpm = 120, startPpq = 0;
+    bool playing = true;
+    int64_t samples = 0;
+    juce::Optional<PositionInfo> getPosition() const override
+    {
+        PositionInfo info;
+        info.setBpm (bpm);
+        info.setIsPlaying (playing);
+        info.setTimeInSamples (samples);
+        info.setPpqPosition (startPpq + (double) samples / sampleRate * bpm / 60.0);
+        info.setTimeSignature (juce::AudioPlayHead::TimeSignature { 4, 4 });
+        return info;
+    }
+};
+
+// Render `seconds` with a held chord in blocks of `block`, following `transport`
+std::vector<float> renderArp (juce::AudioPluginInstance& p, Transport& transport, int block, double seconds)
+{
+    transport.samples = 0;
+    p.setPlayHead (&transport);
+    std::vector<float> out;
+    juce::AudioBuffer<float> buf (2, block);
+    const int total = (int) (seconds * transport.sampleRate);
+    for (int done = 0; done < total; done += block)
+    {
+        buf.clear();
+        juce::MidiBuffer m;
+        if (done == 0)
+            for (int n : { 48, 55, 60 })
+                m.addEvent (juce::MidiMessage::noteOn (1, n, (juce::uint8) 100), 0);
+        if (done <= total / 2 && total / 2 < done + block)
+            for (int n : { 48, 55, 60 })
+                m.addEvent (juce::MidiMessage::noteOff (1, n), total / 2 - done);
+        p.processBlock (buf, m);
+        for (int i = 0; i < block; ++i)
+            out.push_back (buf.getSample (0, i));
+        transport.samples += block;
+    }
+    p.setPlayHead (nullptr);
+    out.resize ((size_t) total);
+    return out;
+}
+
 juce::AudioProcessorParameter* param (juce::AudioPluginInstance& p, const juce::String& name)
 {
     for (auto* q : p.getParameters())
@@ -127,7 +173,7 @@ int main (int argc, char** argv)
     int own = 0;
     for (auto* q : p->getParameters())
         own += isSoundParam (q) ? 1 : 0;
-    check (own == 37, "it has 37 sound parameters (" + juce::String (own) + "; JUCE adds Bypass, Program and hidden MIDI controller slots)");
+    check (own == 45, "it has 45 parameters (" + juce::String (own) + "; JUCE adds Bypass, Program and hidden MIDI controller slots)");
     check (param (*p, "VCF Freq") != nullptr && param (*p, "ENV R") != nullptr, "parameters carry readable names (VCF Freq, ENV R)");
     check (p->getLatencySamples() == 240, "it reports the limiter's 5 ms lookahead as latency (" + juce::String (p->getLatencySamples()) + " frames)");
 
@@ -266,6 +312,58 @@ int main (int argc, char** argv)
                    juce::String (sr / 1000.0, 1) + " kHz, " + juce::String (block) + " frames: plays (peak " + juce::String (on.peak, 3) + ") and falls silent");
             s->releaseResources();
         }
+
+    // ---- arpeggiator through the real plugin
+    std::cout << "Arpeggiator" << std::endl;
+    {
+        auto setUp = [&] (int block) {
+            auto s = create (48000, block);
+            param (*s, "Arp On")->setValueNotifyingHost (1.0f);
+            param (*s, "Arp Swing")->setValueNotifyingHost (0.3f);
+            param (*s, "ENV R")->setValueNotifyingHost (0.2f);
+            return s;
+        };
+        Transport live;
+        live.startPpq = 3.9;   // the first step waits for beat 4
+        auto a = setUp (512);
+        const auto outA = renderArp (*a, live, 512, 3.0);
+        auto b = setUp (64);
+        const auto outB = renderArp (*b, live, 64, 3.0);
+        float peak = 0.0f, diff = 0.0f;
+        int firstSound = -1;
+        for (size_t i = 0; i < outA.size(); ++i)
+        {
+            peak = std::max (peak, std::abs (outA[i]));
+            diff = std::max (diff, std::abs (outA[i] - outB[i]));
+            if (firstSound < 0 && std::abs (outA[i]) > 1e-4f) firstSound = (int) i;
+        }
+        check (peak > 0.05f, "a held chord makes the arp play (peak " + juce::String (peak, 3) + ")");
+        // The same note played directly on beat 4 (0.1 beat = 2400 samples in)
+        int directSound = -1;
+        {
+            auto d = create (48000, 512);
+            param (*d, "ENV R")->setValueNotifyingHost (0.2f);
+            juce::AudioBuffer<float> buf (2, 512);
+            for (int done = 0; done < 4096 && directSound < 0; done += 512)
+            {
+                buf.clear();
+                juce::MidiBuffer m;
+                if (done <= 2400 && 2400 < done + 512)
+                    m.addEvent (juce::MidiMessage::noteOn (1, 48, (juce::uint8) 100), 2400 - done);
+                d->processBlock (buf, m);
+                for (int i = 0; i < 512 && directSound < 0; ++i)
+                    if (std::abs (buf.getSample (0, i)) > 1e-4f) directSound = done + i;
+            }
+            d->releaseResources();
+        }
+        check (firstSound == directSound,
+               "while Live plays, the first note starts exactly on the beat (sample " + juce::String (firstSound) + ", a note played on the beat: " + juce::String (directSound) + ")");
+        check (diff < 1e-6f, "the same audio at 512 and 64 frames per block, as export and freeze need (largest difference " + juce::String (diff) + ")");
+        float tail = 0.0f;
+        for (size_t i = outA.size() - 4800; i < outA.size(); ++i) tail = std::max (tail, std::abs (outA[i]));
+        check (tail < 1e-3f, "it stops after the keys are released");
+        a->releaseResources(); b->releaseResources();
+    }
 
     // ---- re-insert: create and destroy repeatedly
     for (int i = 0; i < 5; ++i)

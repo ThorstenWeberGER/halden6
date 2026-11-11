@@ -49,6 +49,8 @@ struct FakeAudio : juce::Thread
         {
             buf.clear();
             juce::MidiBuffer midi;
+            if (const int n = injectNote.exchange (-1); n >= 0)
+                midi.addEvent (juce::MidiMessage::noteOn (1, n, (juce::uint8) 90), 0);
             proc.processBlock (buf, midi);
             peak = juce::jmax (buf.getMagnitude (0, 0, 512), buf.getMagnitude (1, 0, 512));
             wait (10);
@@ -56,6 +58,7 @@ struct FakeAudio : juce::Thread
     }
     juce::AudioProcessor& proc;
     std::atomic<float> peak { 0.0f };
+    std::atomic<int> injectNote { -1 };   // a note "from Live's MIDI"
 };
 
 struct Gestures : juce::AudioProcessorListener
@@ -175,6 +178,48 @@ int main (int argc, char** argv)
     pump (200);
     js (*ed, "Synth.setParam('pitchWheel', 0); Synth.noteOff(60); Synth.noteOff(64); true");
     pump (100);
+
+    std::cout << "Arpeggiator" << std::endl;
+    js (*ed, "document.querySelector('#arp-toggle').click(); true");
+    pump (300);
+    check ((bool) js (*ed, "document.querySelector('#arp-panel').classList.contains('open')"), "the arpeggiator bar opens");
+    js (*ed, "const s = document.querySelector('#arp-preset'); s.value = '0'; s.dispatchEvent(new Event('change')); true");
+    pump (300);
+    const auto patternJson = proc.getArpPatternJson();
+    check (patternJson.contains ("\"note\":48") && (int) value (proc, "arpMode") == 1,
+           "a factory pattern from the panel reaches the plugin (Italo Octaves, Pattern mode)");
+    js (*ed, "document.querySelector('[data-cid=arpOn] button').click(); true");
+    pump (200);
+    check (value (proc, "arpOn") > 0.5f, "the panel's ARP On switch turns on the plugin's arp");
+    audio.peak = 0.0f;
+    js (*ed, "Synth.noteOn(60, 0.8); true");
+    pump (700);
+    check (audio.peak > 0.01f, "holding a key plays the pattern in the plugin");
+    check ((int) js (*ed, "document.querySelectorAll('.pat-grid .play').length") > 0, "the panel shows the plugin's playhead in the grid");
+    js (*ed, "Synth.noteOff(60); true");
+    pump (300);
+    check ((int) js (*ed, "document.querySelectorAll('.pat-grid .play').length") == 0, "the playhead goes when the keys are released");
+
+    js (*ed, "document.querySelector('.pat-rec').click(); true");
+    pump (100);
+    audio.injectNote = 62;
+    pump (400);
+    audio.injectNote = 65;
+    pump (400);
+    js (*ed, "document.querySelector('.pat-rec').click(); true");
+    pump (300);
+    const auto recorded = juce::JSON::parse (proc.getArpPatternJson());
+    check ((int) recorded["length"] == 2 && (int) recorded["steps"][0]["note"] == 62 && (int) recorded["steps"][1]["note"] == 65,
+           "step recording takes notes played in Live (D4, F4)");
+    {
+        juce::MemoryBlock saved;
+        proc.getStateInformation (saved);
+        Halden6Processor other;
+        other.setStateInformation (saved.getData(), (int) saved.getSize());
+        check (other.getArpPatternJson() == proc.getArpPatternJson(), "the pattern is saved with the Live set");
+    }
+    js (*ed, "document.querySelector('[data-cid=arpOn] button').click(); true");
+    pump (200);
 
     std::cout << "Resizing" << std::endl;
     win.setSize (900, 600);

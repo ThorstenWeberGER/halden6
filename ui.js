@@ -429,7 +429,7 @@
     arpToggle.setAttribute('aria-expanded', open);
     store.set('halden6-arp-open-v1', open);
   }
-  arpToggle.addEventListener('click', () => { if (!commentMode && !S.isPlugin) openArp(!arpPanel.classList.contains('open')); });
+  arpToggle.addEventListener('click', () => { if (!commentMode) openArp(!arpPanel.classList.contains('open')); });
   function setArpHandle(text, lit, rec) {
     // queried here because Arp.init() calls this before the consts below exist
     const handle = $('#arp-toggle');
@@ -764,7 +764,7 @@
   notesReady = true;
   renderNotes();
   updateAudioStatus();
-  if (!S.isPlugin) openArp(store.get('halden6-arp-open-v1', false));
+  openArp(store.get('halden6-arp-open-v1', false));
   // live scope in the arpeggiator bar
   $('#arp-toggle').insertBefore(Viz.create('scope', ''), $('#arp-toggle .arp-chevron'));
   Viz.init();
@@ -772,16 +772,13 @@
 
   // ---------- inside the plugin ----------
   if (S.isPlugin) {
-    // The arpeggiator needs a clock that follows Live (phase 4); until then
-    // its bar only shows the scope
-    setArpHandle('In a later version', false);
-
     // Live changed a parameter (automation, undo, a loaded set): show it
     window.addEventListener('halden6-param', e => {
       const id = e.detail.id;
       if (controlIndex[id]) controlIndex[id].render();
       if (id === 'lfoTempo' && controlIndex.lfoRate) controlIndex.lfoRate.render();
       if (window.Viz) Viz.update();
+      if (window.Arp) Arp.paramChanged(id);
       if (!presetLoading && PRESET_IDS.has(id) && currentPreset && !presetEdited) { presetEdited = true; renderPresetBar(); }
     });
 

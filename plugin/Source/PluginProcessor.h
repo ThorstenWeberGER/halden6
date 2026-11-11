@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Arp.h"
 #include "Engine.h"
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <array>
@@ -52,10 +53,21 @@ public:
     bool presetIsEdited() const { return presetEdited.load(); }
     void setPresetFromPanel (int num, bool edited);
 
+    // The arpeggiator's pattern and slots, as the panel's JSON. Saved with the Live set.
+    void setArpPatternJson (const juce::String& json);
+    void setArpSlotsJson (const juce::String& json) { const juce::ScopedLock l (arpJsonLock); arpSlotsJson = json; }
+    juce::String getArpPatternJson() const { const juce::ScopedLock l (arpJsonLock); return arpPatternJson; }
+    juce::String getArpSlotsJson() const { const juce::ScopedLock l (arpJsonLock); return arpSlotsJson; }
+    int arpPlayhead() const { return arpPlayheadStep.load(); }
+    // Notes from the host's MIDI since the last call, for step recording in the panel
+    void takeHostNotes (std::vector<std::pair<int, float>>& out);
+
 private:
     static juce::AudioProcessorValueTreeState::ParameterLayout createLayout();
     void handleMidi (const juce::MidiMessage& m);
     void pushPanel();
+    void renderUpTo (float* left, float* right, int& pos, int target);
+    halden6::ArpSettings arpSettings() const;
 
     halden6::Engine engine;
     std::atomic<float>* raw[halden6::kNumParams] {};
@@ -70,6 +82,19 @@ private:
     static constexpr int kScopeRing = 4096;
     std::array<std::atomic<float>, kScopeRing> scopeRing {};
     std::atomic<int> scopeWrite { 0 };
+    halden6::Arp arp;
+    std::vector<halden6::ArpEvent> arpEvents;
+    halden6::ArpTime blockTime;
+    double samplesPerBeat = 24000.0;
+    juce::SpinLock arpPatternLock;          // hand-over of a new pattern to the audio thread
+    halden6::ArpPattern pendingPattern;
+    bool patternPending = false;
+    juce::CriticalSection arpJsonLock;
+    juce::String arpPatternJson, arpSlotsJson;
+    std::atomic<int> arpPlayheadStep { -1 };
+    juce::SpinLock hostNotesLock;
+    std::vector<std::pair<int, float>> hostNotes;
+
     std::atomic<int> presetNum { 0 };
     std::atomic<bool> presetEdited { false };
 

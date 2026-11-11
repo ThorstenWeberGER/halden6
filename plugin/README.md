@@ -1,12 +1,23 @@
 # Halden 6 VST3 plugin
 
 The same synth as the web version, as a VST3 instrument for Ableton Live on
-Windows. Phases 1 to 3 of [../docs/plugin-plan.md](../docs/plugin-plan.md) are
-built, and the sound presets of phase 5: it plays from MIDI, every sound
-control is a Live parameter, the patch is saved in the Live set, the window
-is the Halden 6 panel, and the 100 factory presets are in Live's preset menu. Drag the window
-corner to any size; the panel reflows as in the browser, and the size is saved
-in the Live set. The arpeggiator follows in phase 4.
+Windows. Phases 1 to 5 of [../docs/plugin-plan.md](../docs/plugin-plan.md) are
+built: it plays from MIDI, every control is a Live parameter, the patch is
+saved in the Live set, the window is the Halden 6 panel, the 100 factory
+presets are in Live's preset menu, and the arpeggiator runs in step with Live.
+Drag the window corner to any size; the panel reflows as in the browser, and
+the size is saved in the Live set.
+
+## Arpeggiator
+
+The arp's clock runs in the plugin (`Source/Arp.*`), with the same rules as
+`arp.js`; they are written down at the top of `Source/Arp.h`. While Live plays,
+steps sit on Live's grid and follow loops and tempo changes. When Live is
+stopped, the arp runs on at Live's tempo from the key press. It counts samples,
+not clock time, so export and freeze play exactly what you heard. The arp
+controls are Live parameters; the pattern and the 8 slots are saved in the
+Live set. The panel's BPM display shows Live's tempo. Step recording takes
+notes from the panel's keys and from Live's MIDI.
 
 ## The panel inside the plugin
 
@@ -21,8 +32,8 @@ The preset shown in the panel and the one in Live's menu are the same, and it
 is saved with the Live set. Choosing a preset changes the sound only, as in the
 panel: volume stays.
 
-Left out in the plugin: comment mode, and the arpeggiator with its 7 factory
-patterns (phase 4). The skin is remembered per computer, not per Live set.
+Left out in the plugin: comment mode. The skin is remembered per computer,
+not per Live set.
 
 ## Install
 
@@ -37,14 +48,15 @@ Rescan.
 | Path | What it is |
 |---|---|
 | `Source/Engine.*` | The sound engine without JUCE: six Faust voices, the effect, voice allocation and the ML / G-ML note logic. A port of `synth.js` and faustwasm's voice pool. |
+| `Source/Arp.*` | The arpeggiator's clock and rules. |
 | `Source/Mappings.h` | Fader position to Hz, seconds and cents. A copy of `dspValues()` in `mapping.js`. |
 | `Source/PluginProcessor.*` | The JUCE plugin: MIDI in, parameters, saved state. |
 | `Source/PluginEditor.*` | The plugin window: the web panel, resizing, messages both ways. |
 | `web/bridge.js` | The panel's link to the plugin (replaces `synth.js`). |
 | `Source/FaustGlue.h` | The few Faust base classes the generated code needs. |
-| `Source/generated/` | Generated, committed: `Parameters.h` from `panel.js`, `Presets.h` from `presets.js`, `Halden6Voice.h` and `Halden6Effect.h` from `dsp/halden6.dsp`. |
+| `Source/generated/` | Generated, committed: `Parameters.h` from `panel.js`, `Presets.h` from `presets.js`, `ArpPatterns.h` from `arp-patterns.js`, `Halden6Voice.h` and `Halden6Effect.h` from `dsp/halden6.dsp`. |
 | `tools/generate.mjs` | Writes `Source/generated/`. |
-| `tools/check.mjs` | Compares the plugin with the web version: mappings and sound. |
+| `tools/check.mjs` | Compares the plugin with the web version (mappings, sound) and checks the arp's rules sample by sample. |
 | `tools/hosttest.cpp` | Loads the built `.vst3` like a DAW and plays it. |
 | `tools/paneltest.cpp` | Opens the plugin window and drives the panel both ways. |
 | `JUCE/` | JUCE 8.0.9, git submodule. |
@@ -62,7 +74,7 @@ LFO tempo sync follows Live's tempo.
 
 ```
 cd dsp && npm install && cd ..           # once
-node plugin/tools/generate.mjs           # panel.js or presets.js changed
+node plugin/tools/generate.mjs           # panel.js, presets.js or arp-patterns.js changed
 node plugin/tools/generate.mjs --dsp     # halden6.dsp changed: needs the Faust compiler on PATH
 node plugin/tools/check.mjs              # plugin and web version still agree?
 ```

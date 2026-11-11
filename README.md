@@ -127,6 +127,7 @@ them on the clipboard to paste straight into the chat.
 | `viz.js` | Section graphs and the live output scope. |
 | `backdrop.js` | Octagon backdrop behind the main panel, coloured per skin. |
 | `arp.js` | Arpeggiator: clock, modes, recording, pattern editor, slots. |
+| `arp-patterns.js` | The example pattern and the 7 factory patterns, shared with the plugin. |
 | `ui.js` | Rendering, input, keyboard, comment mode. |
 | `styles.css` | Look, layout and skins. |
 | `fonts/` | Bundled font files and their licences. |
@@ -140,8 +141,9 @@ Plain HTML, CSS and JavaScript with no build step.
 
 Halden 6 is becoming an open-source VST3 instrument for Ableton Live on
 Windows, built with JUCE from the same Faust sound engine. It plays, records
-automation, saves its patch in the Live set and shows this panel in a window
-you can resize freely; the arpeggiator comes next. To try it, double-click `install.cmd` in a clone
+automation, saves its patch in the Live set, lists the 100 presets in Live's
+preset menu, runs the arpeggiator in step with Live, and shows this panel in a
+window you can resize freely. To try it, double-click `install.cmd` in a clone
 of this repository. See [plugin/README.md](plugin/README.md) and
 [docs/plugin-plan.md](docs/plugin-plan.md).
 

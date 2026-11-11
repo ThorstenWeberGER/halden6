@@ -1,6 +1,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include "generated/Presets.h"
+#include "generated/ArpPatterns.h"
 
 using namespace halden6;
 
@@ -16,6 +17,94 @@ Halden6Processor::Halden6Processor()
 {
     for (int i = 0; i < kNumParams; ++i)
         raw[i] = state.getRawParameterValue (kParams[i].id);
+    arp.setPattern (defaultArpPattern());
+    arpEvents.reserve (512);
+    hostNotes.reserve (64);
+}
+
+// ---------------------------------------------------------------- arpeggiator
+
+namespace
+{
+    // The panel's pattern { length, steps: [{ on, note, vel, gate, tie } x 16] }
+    std::optional<ArpPattern> parsePattern (const juce::String& json)
+    {
+        const auto v = juce::JSON::parse (json);
+        const auto* steps = v["steps"].getArray();
+        if (steps == nullptr || steps->size() != 16)
+            return std::nullopt;
+        ArpPattern p;
+        p.length = juce::jlimit (1, 16, (int) v["length"]);
+        for (int i = 0; i < 16; ++i)
+        {
+            const auto& s = steps->getReference (i);
+            p.steps[(size_t) i] = { (bool) s["on"], juce::jlimit (0, 127, (int) s["note"]),
+                                    juce::jlimit (0.0f, 1.0f, (float) (double) s["vel"]),
+                                    juce::jlimit (0.0f, 1.0f, (float) (double) s["gate"]), (bool) s["tie"] };
+        }
+        return p;
+    }
+}
+
+void Halden6Processor::setArpPatternJson (const juce::String& json)
+{
+    const auto p = parsePattern (json);
+    if (! p.has_value())
+        return;
+    {
+        const juce::ScopedLock l (arpJsonLock);
+        arpPatternJson = json;
+    }
+    const juce::SpinLock::ScopedLockType l (arpPatternLock);
+    pendingPattern = *p;
+    patternPending = true;
+}
+
+void Halden6Processor::takeHostNotes (std::vector<std::pair<int, float>>& out)
+{
+    out.clear();
+    const juce::SpinLock::ScopedLockType l (hostNotesLock);
+    out.swap (hostNotes);
+    hostNotes.reserve (64);
+}
+
+ArpSettings Halden6Processor::arpSettings() const
+{
+    ArpSettings s;
+    s.on = values[P_arpOn] > 0.5f;
+    s.mode = (int) std::lround (values[P_arpMode]);
+    s.latch = values[P_arpLatch] > 0.5f;
+    s.rate = (int) std::lround (values[P_arpRate]);
+    s.swing = values[P_arpSwing];
+    s.order = (int) std::lround (values[P_arpOrder]);
+    s.octaves = (int) std::lround (values[P_arpOctaves]);
+    s.gate = values[P_arpGate];
+    return s;
+}
+
+// Render from pos to target, playing the arpeggiator's notes on their sample
+void Halden6Processor::renderUpTo (float* left, float* right, int& pos, int target)
+{
+    if (target <= pos)
+        return;
+    ArpTime t = blockTime;
+    t.ppq = blockTime.ppq + pos / samplesPerBeat;
+    arp.advance (target - pos, t, arpEvents);
+    int at = pos;
+    for (const auto& e : arpEvents)
+    {
+        const int when = pos + e.offset;
+        if (when > at)
+        {
+            engine.render (left + at, right + at, when - at);
+            at = when;
+        }
+        if (e.on) engine.triggerOn (e.note, e.vel);
+        else engine.triggerOff (e.note);
+    }
+    if (at < target)
+        engine.render (left + at, right + at, target - at);
+    pos = target;
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout Halden6Processor::createLayout()
@@ -59,6 +148,7 @@ void Halden6Processor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     pushPanel();
     engine.prepare ((int) std::lround (sampleRate), juce::jmax (samplesPerBlock, 32));
+    arp.prepare (sampleRate);
     panelMidi.ensureSize (256);
     setLatencySamples ((int) (0.005 * sampleRate));   // the limiter's 5 ms lookahead
 }
@@ -74,10 +164,17 @@ void Halden6Processor::pushPanel()
 
 void Halden6Processor::handleMidi (const juce::MidiMessage& m)
 {
+    // Keys go to the arpeggiator first; it decides whether they sound directly
     if (m.isNoteOn())
-        engine.noteOn (m.getNoteNumber(), m.getFloatVelocity());
+    {
+        if (! arp.keyDown (m.getNoteNumber(), m.getFloatVelocity()))
+            engine.noteOn (m.getNoteNumber(), m.getFloatVelocity());
+    }
     else if (m.isNoteOff())
-        engine.noteOff (m.getNoteNumber());
+    {
+        if (! arp.keyUp (m.getNoteNumber()))
+            engine.noteOff (m.getNoteNumber());
+    }
     else if (m.isPitchWheel())
     {
         perf.pitchWheel = juce::jlimit (-1.0f, 1.0f, (float) (m.getPitchWheelValue() - 8192) / 8192.0f);
@@ -86,7 +183,7 @@ void Halden6Processor::handleMidi (const juce::MidiMessage& m)
     else if (m.isAllNotesOff() || m.isAllSoundOff() || m.isResetAllControllers())
     {
         if (m.isResetAllControllers()) { perf.pitchWheel = 0.0f; pushPanel(); }
-        else engine.panic();
+        else { arp.stopAll(); engine.panic(); }
     }
 }
 
@@ -94,14 +191,36 @@ void Halden6Processor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mid
 {
     juce::ScopedNoDenormals noDenormals;
 
+    blockTime.playing = false;
     if (auto* head = getPlayHead())
         if (auto pos = head->getPosition())
+        {
             if (auto bpm = pos->getBpm())
                 perf.bpm = *bpm;
+            if (auto ppq = pos->getPpqPosition(); ppq.hasValue() && pos->getIsPlaying())
+            {
+                blockTime.playing = true;
+                blockTime.ppq = *ppq;
+            }
+        }
     bpmForPanel = perf.bpm;
+    blockTime.bpm = perf.bpm;
+    samplesPerBeat = getSampleRate() * 60.0 / juce::jlimit (20.0, 999.0, perf.bpm);
     if (panelWheelPending.exchange (false))
         perf.pitchWheel = panelWheel.load();
     pushPanel();
+    arp.setSettings (arpSettings());
+    if (const juce::SpinLock::ScopedTryLockType lock (arpPatternLock); lock.isLocked() && patternPending)
+    {
+        arp.setPattern (pendingPattern);
+        patternPending = false;
+    }
+
+    // The host's notes, for step recording in the panel
+    if (const juce::SpinLock::ScopedTryLockType lock (hostNotesLock); lock.isLocked())
+        for (const auto meta : midi)
+            if (meta.getMessage().isNoteOn() && hostNotes.size() < 64)
+                hostNotes.emplace_back (meta.getMessage().getNoteNumber(), meta.getMessage().getFloatVelocity());
 
     // Notes from the panel's keys join the host's MIDI
     // (try-lock: the audio thread never waits; busy now means next block)
@@ -118,16 +237,11 @@ void Halden6Processor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mid
     int pos = 0;
     for (const auto meta : midi)
     {
-        const int at = juce::jlimit (0, numSamples, meta.samplePosition);
-        if (at > pos)
-        {
-            engine.render (left + pos, right + pos, at - pos);
-            pos = at;
-        }
+        renderUpTo (left, right, pos, juce::jlimit (0, numSamples, meta.samplePosition));
         handleMidi (meta.getMessage());
     }
-    if (pos < numSamples)
-        engine.render (left + pos, right + pos, numSamples - pos);
+    renderUpTo (left, right, pos, numSamples);
+    arpPlayheadStep = arp.playhead();
 
     // Keep the last few thousand samples for the panel's live scope
     int w = scopeWrite.load (std::memory_order_relaxed);
@@ -199,6 +313,8 @@ void Halden6Processor::getStateInformation (juce::MemoryBlock& destData)
     tree.setProperty ("stateVersion", kStateVersion, nullptr);
     tree.setProperty ("preset", presetNum.load(), nullptr);
     tree.setProperty ("presetEdited", presetEdited.load(), nullptr);
+    tree.setProperty ("arpPattern", getArpPatternJson(), nullptr);
+    tree.setProperty ("arpSlots", getArpSlotsJson(), nullptr);
     if (auto xml = tree.createXml())
         copyXmlToBinary (*xml, destData);
 }
@@ -211,6 +327,8 @@ void Halden6Processor::setStateInformation (const void* data, int sizeInBytes)
             const auto tree = juce::ValueTree::fromXml (*xml);
             presetNum = juce::jlimit (0, kNumPresets, (int) tree.getProperty ("preset", 0));
             presetEdited = (bool) tree.getProperty ("presetEdited", false);
+            setArpPatternJson (tree.getProperty ("arpPattern", "").toString());
+            setArpSlotsJson (tree.getProperty ("arpSlots", "").toString());
             state.replaceState (tree);
         }
 }

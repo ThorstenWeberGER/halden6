@@ -16,6 +16,15 @@ namespace
         return juce::var (obj);
     }
 
+    // The saved pattern and slots, or null for the panel's defaults
+    juce::var arpInfo (const juce::String& pattern, const juce::String& slots)
+    {
+        auto* obj = new juce::DynamicObject();
+        obj->setProperty ("pattern", pattern.isEmpty() ? juce::var() : juce::JSON::parse (pattern));
+        obj->setProperty ("slots", slots.isEmpty() ? juce::var() : juce::JSON::parse (slots));
+        return juce::var (obj);
+    }
+
     const char* mimeType (const juce::String& file)
     {
         if (file.endsWith (".html")) return "text/html; charset=utf-8";
@@ -89,6 +98,7 @@ juce::WebBrowserComponent::Options Halden6Editor::options()
         .withResourceProvider ([] (const juce::String& path) { return serve (path); })
         .withInitialisationData ("params", allValues())
         .withInitialisationData ("preset", presetInfo (proc.presetNumber(), proc.presetIsEdited()))
+        .withInitialisationData ("arp", arpInfo (proc.getArpPatternJson(), proc.getArpSlotsJson()))
         .withEventListener ("halden6", [this] (const juce::var& msg) { handleMessage (msg); });
 }
 
@@ -176,6 +186,28 @@ void Halden6Editor::timerCallback()
         web.emitEventIfBrowserIsVisible ("preset", presetInfo (num, edited));
     }
 
+    // The arpeggiator's playhead in the pattern grid
+    const int step = proc.arpPlayhead();
+    if (step != lastPlayhead)
+    {
+        lastPlayhead = step;
+        auto* obj = new juce::DynamicObject();
+        obj->setProperty ("step", step);
+        web.emitEventIfBrowserIsVisible ("arp", juce::var (obj));
+    }
+
+    // Notes from Live's MIDI, for step recording in the pattern editor
+    proc.takeHostNotes (hostNotes);
+    if (! hostNotes.empty())
+    {
+        juce::Array<juce::var> notes;
+        for (const auto& [note, vel] : hostNotes)
+            notes.add (juce::Array<juce::var> { note, vel });
+        auto* obj = new juce::DynamicObject();
+        obj->setProperty ("notes", notes);
+        web.emitEventIfBrowserIsVisible ("midiNotes", juce::var (obj));
+    }
+
     // The live scope
     proc.copyScope (scope.data(), kScopeSize);
     juce::Array<juce::var> data;
@@ -232,6 +264,14 @@ void Halden6Editor::handleMessage (const juce::var& msg)
     else if (type == "panic")
     {
         proc.addPanelMidi (juce::MidiMessage::allNotesOff (1));
+    }
+    else if (type == "arpPattern")
+    {
+        proc.setArpPatternJson (msg["json"].toString());
+    }
+    else if (type == "arpSlots")
+    {
+        proc.setArpSlotsJson (msg["json"].toString());
     }
     else if (type == "preset")
     {

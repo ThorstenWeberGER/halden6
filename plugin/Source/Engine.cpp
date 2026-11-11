@@ -286,7 +286,9 @@ void Engine::renderVoice (Voice& v, float* out, int n)
     int done = 0;
     while (done < n)
     {
-        int m = n - done;
+        // Pieces end on the 128-frame level windows, so a finished voice is
+        // freed at the same sample however the host cuts the audio
+        int m = std::min (n - done, kLevelWindow - v.windowCount);
         float* buf = scratch.data();
         float* outs[] = { buf };
 

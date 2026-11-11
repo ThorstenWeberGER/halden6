@@ -158,4 +158,82 @@ console.log('Sound (web engine vs plugin engine, 48 kHz)');
   }
 }
 
+// ---------- 3. arpeggiator rules ----------
+console.log('Arpeggiator (plugin clock, 48 kHz, 120 BPM: a 1/16 step is 6000 samples)');
+{
+  const SR = 48000, STEP = 6000;
+  // settings: on mode latch rate swing order octaves gate
+  const set = (o = {}) => {
+    const v = { on: 1, mode: 0, latch: 0, rate: 3, swing: 0, order: 0, octaves: 1, gate: 0.7, ...o };
+    return `settings ${v.on} ${v.mode} ${v.latch} ${v.rate} ${v.swing} ${v.order} ${v.octaves} ${v.gate}`;
+  };
+  const run = (script, chunk = 512) => tool(['arp', String(SR), String(chunk)], script.join('\n') + '\n')
+    .trim().split('\n').filter(Boolean).map(l => { const [t, kind, note, vel] = l.split(' '); return { t: +t, on: kind === 'on', note: +note, vel: +vel }; });
+  const ons = ev => ev.filter(e => e.on);
+  const expect = (name, ok, detail = '') => (ok ? console.log('  ok: ' + name) : fail(name + (detail ? ': ' + detail : '')));
+  const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  const gateLen = g => Math.round(STEP * (0.05 + g * 0.95));
+
+  // Up, one octave: notes in pitch order, one per step, the first with the key
+  let ev = run([set(), 'down 64 0.9', 'down 60 0.5', 'down 67 0.7', 'advance 48000']);
+  expect('up order, one note per 1/16 step from the key press',
+    eq(ons(ev).map(e => [e.t, e.note]), [0, 1, 2, 3, 4, 5, 6, 7].map(k => [k * STEP, [60, 64, 67][k % 3]])), JSON.stringify(ons(ev).slice(0, 4)));
+  expect('each note keeps the velocity of its key', eq(ons(ev).slice(0, 3).map(e => e.vel), [0.5, 0.9, 0.7]));
+  const first60off = ev.find(e => !e.on && e.note === 60);
+  expect('gate 0.7 holds a note for 0.715 steps', first60off && first60off.t === gateLen(0.7), String(first60off && first60off.t));
+
+  // Orders
+  const seq = (order, octaves, keys) => ons(run([set({ order, octaves }), ...keys.map(k => `down ${k} 0.8`), 'advance 60000'])).map(e => e.note);
+  expect('down order', eq(seq(1, 1, [60, 64, 67]).slice(0, 6), [67, 64, 60, 67, 64, 60]));
+  expect('up-down over 2 octaves, top and bottom not repeated', eq(seq(2, 2, [60, 64]).slice(0, 8), [60, 64, 72, 76, 72, 64, 60, 64]));
+  expect('as played', eq(seq(4, 1, [67, 60, 64]).slice(0, 6), [67, 60, 64, 67, 60, 64]));
+  const rnd = seq(3, 2, [60, 64]);
+  expect('random stays within the held notes and octaves', rnd.length === 10 && rnd.every(n => [60, 64, 72, 76].includes(n)));
+
+  // Swing: every second step later by swing x 0.33 steps
+  ev = ons(run([set({ swing: 0.5 }), 'down 60 0.8', 'advance 30000']));
+  expect('swing 0.5 delays every second step by 0.165 steps',
+    eq(ev.map(e => e.t), [0, 1, 2, 3, 4].map(k => k * STEP + (k % 2 ? Math.ceil(0.5 * 0.33 * STEP - 1e-6) : 0))), JSON.stringify(ev.map(e => e.t)));
+
+  // Pattern mode: the example pattern, transposed by the held key
+  ev = run([set({ mode: 1 }), 'down 64 0.8', 'advance 96000']);
+  const P = [[60, 1, 0.5], [60, 0.55, 0.3], [67, 0.8, 0.5], [72, 0.9, 0.6], null, [70, 0.7, 0.4], [67, 0.75, 0.5], [65, 0.6, 0.3],
+             [60, 1, 0.5], [63, 0.6, 0.4], [67, 0.85, 1, true], [67, 0.6, 0.5], null, [72, 0.9, 0.4], [70, 0.65, 0.4], [67, 0.7, 0.8]];
+  const want = P.map((s, k) => s && [k * STEP, s[0] + 4, s[1]]).filter(Boolean);
+  expect('pattern: 16 steps, rests skipped, E4 transposes up 4 semitones',
+    eq(ons(ev).map(e => [e.t, e.note, +e.vel.toFixed(2)]), want), JSON.stringify(ons(ev).slice(0, 3)));
+  const tieOn = ons(ev).find(e => e.t === 10 * STEP);
+  const tieOff = ev.find(e => !e.on && e.note === tieOn.note && e.t > tieOn.t);
+  expect('a tied step holds 1.05 steps', tieOff && tieOff.t - tieOn.t === Math.round(STEP * 1.05), String(tieOff && tieOff.t - tieOn.t));
+
+  // Release and latch
+  ev = run([set(), 'down 60 0.8', 'advance 13000', 'up 60', 'advance 30000']);
+  expect('without latch the arp stops when the keys are up', ons(ev).length === 3 && ev.filter(e => !e.on).length === 3);
+  ev = run([set({ latch: 1 }), 'down 60 0.8', 'advance 13000', 'up 60', 'advance 12000', 'down 67 0.8', 'advance 18000']);
+  expect('latch keeps playing, a new key after release replaces the chord',
+    eq(ons(ev).map(e => e.note), [60, 60, 60, 60, 60, 67, 67, 67]), JSON.stringify(ons(ev).map(e => e.note)));
+  ev = run([set(), 'down 60 0.8', 'advance 7000', set({ on: 0 }), 'advance 20000']);
+  expect('switching the arp off stops it, the last note still ends', ons(ev).length === 2 && ev.filter(e => !e.on).length === 2);
+
+  // Following Live
+  ev = ons(run([set({ mode: 1 }), 'play 3.9', 'down 60 0.8', 'advance 30000']));
+  expect('while Live plays, the first step waits for the grid (ppq 4.0) and is pattern step 1',
+    ev[0].t === 2400 && ev[0].note === 60 && ev[1].t === 2400 + STEP, JSON.stringify(ev.slice(0, 2)));
+  ev = ons(run([set(), 'play 4.02', 'down 60 0.8', 'advance 10000']));
+  expect('a key pressed just after a step still catches it', ev[0].t === 0 && ev[1].t === Math.round(0.23 * 24000), JSON.stringify(ev.slice(0, 2)));
+  ev = ons(run([set(), 'play 7.5', 'down 60 0.8', 'advance 12000', 'play 4.0', 'advance 6000']));
+  expect('a loop back to the start plays the loop\'s first step once, on time',
+    eq(ev.map(e => e.t), [0, 6000, 12000]), JSON.stringify(ev.map(e => e.t)));
+  ev = ons(run([set(), 'play 0', 'down 60 0.8', 'advance 15000', 'stop', 'advance 20000']));
+  expect('when Live stops, the arp runs on in the same rhythm', eq(ev.map(e => e.t), [0, 6000, 12000, 18000, 24000, 30000]), JSON.stringify(ev.map(e => e.t)));
+  ev = ons(run([set(), 'down 60 0.8', 'advance 12000', 'tempo 60', 'advance 30000']));
+  expect('a tempo change takes effect from the next step', eq(ev.map(e => e.t), [0, 6000, 12000, 24000, 36000]), JSON.stringify(ev.map(e => e.t)));
+
+  // Export and freeze: the notes must not depend on how the host cuts the audio
+  const script = [set({ swing: 0.3, order: 2, octaves: 2 }), 'play 1.37', 'down 60 0.8', 'down 63 0.6', 'advance 50000',
+                  'up 63', 'advance 20011', 'play 2.0', 'advance 33333', 'stop', 'advance 40000', 'down 67 0.9', 'advance 25000'];
+  const a = run(script, 4096), b = run(script, 17), c = run(script, 128);
+  expect('block sizes 17, 128 and 4096 give the same notes on the same samples', a.length > 20 && eq(a, b) && eq(a, c), `${a.length} ${b.length} ${c.length}`);
+}
+
 process.exit(failed ? 1 : 0);

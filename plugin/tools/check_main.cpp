@@ -8,7 +8,15 @@
 //                                  "frame on|off note velocity" lines in frame
 //                                  order; writes FRAMES left then FRAMES right
 //                                  samples as float32
+//   halden6_check arp SR CHUNK      stdin: an arp script, one command per line:
+//                                  settings ON MODE LATCH RATE SWING ORDER OCTAVES GATE
+//                                  tempo BPM | play PPQ | stop | down NOTE VEL | up NOTE
+//                                  advance SAMPLES (split into CHUNK-sized calls)
+//                                  stdout: "TIME on|off NOTE VEL" per event, TIME in
+//                                  samples since the start
 #include "../Source/Engine.h"
+#include "../Source/Arp.h"
+#include "../Source/generated/ArpPatterns.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -89,7 +97,7 @@ int main (int argc, char** argv)
             int end = frames;
             if (next < events.size())
                 end = std::min (end, events[next].frame);
-            end = std::min (end, pos + 128);
+            end = std::min (end, pos + (std::getenv ("H6_CHUNK") ? std::atoi (std::getenv ("H6_CHUNK")) : 128));
             engine.render (left.data() + pos, right.data() + pos, end - pos);
             pos = end;
         }
@@ -103,6 +111,52 @@ int main (int argc, char** argv)
         return 0;
     }
 
-    std::fprintf (stderr, "usage: halden6_check map | render SR FRAMES OUT.raw\n");
+    if (mode == "arp" && argc == 4)
+    {
+        const double sr = std::atof (argv[2]);
+        const int chunk = std::max (1, std::atoi (argv[3]));
+        Arp arp;
+        arp.prepare (sr);
+        arp.setPattern (defaultArpPattern());
+        ArpTime t;
+        int64_t clock = 0;
+        std::vector<ArpEvent> events;
+        std::string cmd;
+        while (std::cin >> cmd)
+        {
+            if (cmd == "settings")
+            {
+                ArpSettings s;
+                int on, latch;
+                std::cin >> on >> s.mode >> latch >> s.rate >> s.swing >> s.order >> s.octaves >> s.gate;
+                s.on = on != 0; s.latch = latch != 0;
+                arp.setSettings (s);
+            }
+            else if (cmd == "tempo") std::cin >> t.bpm;
+            else if (cmd == "play") { std::cin >> t.ppq; t.playing = true; }
+            else if (cmd == "stop") t.playing = false;
+            else if (cmd == "down") { int n; float v; std::cin >> n >> v; arp.keyDown (n, v); }
+            else if (cmd == "up") { int n; std::cin >> n; arp.keyUp (n); }
+            else if (cmd == "advance")
+            {
+                int n;
+                std::cin >> n;
+                while (n > 0)
+                {
+                    const int m = std::min (n, chunk);
+                    arp.advance (m, t, events);
+                    for (const auto& e : events)
+                        std::printf ("%lld %s %d %.4f\n", (long long) (clock + e.offset), e.on ? "on" : "off", e.note, e.vel);
+                    clock += m;
+                    n -= m;
+                    if (t.playing)
+                        t.ppq += m * t.bpm / (60.0 * sr);
+                }
+            }
+        }
+        return 0;
+    }
+
+    std::fprintf (stderr, "usage: halden6_check map | render SR FRAMES OUT.raw | arp SR CHUNK\n");
     return 1;
 }

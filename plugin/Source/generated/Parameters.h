@@ -54,6 +54,14 @@ enum Param
     P_envD,
     P_envS,
     P_envR,
+    P_arpOn,
+    P_arpMode,
+    P_arpLatch,
+    P_arpRate,
+    P_arpSwing,
+    P_arpOrder,
+    P_arpOctaves,
+    P_arpGate,
     kNumParams
 };
 
@@ -64,6 +72,9 @@ inline const char* const options_dcoPwmSource[] = { "LFO", "ENV" };
 inline const char* const options_dcoPwmMod[] = { "On", "Off" };
 inline const char* const options_vcfEnvPolarity[] = { "+", "\xe2""\x88""\x92""" };
 inline const char* const options_vcaMode[] = { "Env", "Gate" };
+inline const char* const options_arpMode[] = { "Arp", "Pattern" };
+inline const char* const options_arpRate[] = { "1/4", "1/8", "1/8T", "1/16", "1/16T", "1/32" };
+inline const char* const options_arpOrder[] = { "up", "down", "up-dn", "random", "played" };
 
 inline const ParamInfo kParams[kNumParams] = {
     { "velocityEnv", "Velocity Env", ParamType::Float, 0.0f, 1.0f, 0.0f, nullptr, 0 },
@@ -103,5 +114,13 @@ inline const ParamInfo kParams[kNumParams] = {
     { "envD", "ENV D", ParamType::Float, 0.0f, 1.0f, 0.45f, nullptr, 0 },
     { "envS", "ENV S", ParamType::Float, 0.0f, 1.0f, 0.6f, nullptr, 0 },
     { "envR", "ENV R", ParamType::Float, 0.0f, 1.0f, 0.35f, nullptr, 0 },
+    { "arpOn", "Arp On", ParamType::Bool, 0.0f, 1.0f, 0.0f, nullptr, 0 },
+    { "arpMode", "Arp Mode", ParamType::Choice, 0.0f, 1.0f, 0.0f, options_arpMode, 2 },
+    { "arpLatch", "Arp Latch", ParamType::Bool, 0.0f, 1.0f, 0.0f, nullptr, 0 },
+    { "arpRate", "Arp Rate", ParamType::Choice, 0.0f, 5.0f, 3.0f, options_arpRate, 6 },
+    { "arpSwing", "Arp Swing", ParamType::Float, 0.0f, 1.0f, 0.0f, nullptr, 0 },
+    { "arpOrder", "Arp Order", ParamType::Choice, 0.0f, 4.0f, 0.0f, options_arpOrder, 5 },
+    { "arpOctaves", "Arp Octaves", ParamType::Int, 1.0f, 4.0f, 1.0f, nullptr, 0 },
+    { "arpGate", "Arp Gate", ParamType::Float, 0.0f, 1.0f, 0.7f, nullptr, 0 },
 };
 } // namespace halden6
