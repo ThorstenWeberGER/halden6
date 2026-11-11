@@ -6,7 +6,7 @@ blocks from the Faust standard libraries, so there is no hand-written DSP.
 
 | File | What it is |
 |---|---|
-| `halden6.dsp` | The voice. Edit this to change the sound. |
+| `halden6.dsp` | The voice, plus the effect after the voices: HPF, chorus, output gain and limiter. Edit this to change the sound. |
 | `halden6-dsp.js` | Generated: the compiled WebAssembly, embedded so `index.html` works from disk. |
 | `build.mjs` | Compiles `halden6.dsp` and refreshes `halden6-dsp.js` and `../vendor/faustwasm.js`. |
 

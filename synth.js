@@ -3,9 +3,9 @@
 // by faustwasm (vendor/faustwasm.js) with six-voice polyphony. Band-limited
 // oscillators, PWM, a Moog ladder filter, envelopes and LFO all come from the
 // Faust standard libraries.
-// The same Faust program holds the effect after the voices: HPF, then a
-// Juno-60 chorus ported from junologue-chorus (MIT, Peter Allwin).
-// Browser built-ins after that: VCA level -> volume -> limiter -> speakers.
+// The same Faust program holds the effect after the voices: HPF, a Juno-60
+// chorus ported from junologue-chorus (MIT, Peter Allwin), then the output
+// stage: makeup gain x VCA level x volume, and a peak limiter. Then speakers.
 // This file owns the mapping from fader positions to real units (Hz, seconds,
 // cents); the same functions feed the DSP and the graphs in viz.js.
 
@@ -15,6 +15,7 @@
 
   const TEMPO_BEATS = [0, 4, 2, 1, 0.5, 0.25]; // '----', 1/1, 1/2, 1/4, 1/8, 1/16
   const MAX_VOICES = 6;
+  const OUT_MAKEUP = 5.1; // +14 dB: the old +12 dB plus the ~2 dB the browser compressor used to add
 
   let ctx = null;
   const g = {};          // global nodes
@@ -57,6 +58,9 @@
       vcaGate: P.vcaMode, velEnv: P.velocityEnv,
       hpf: hpfHz(),
       chorusMode: P.chorus1 && P.chorus2 ? 3 : P.chorus2 ? 2 : P.chorus1 ? 1 : 0,
+      // +14 dB makeup (one note peaks around -24 dBFS, too quiet), VCA level and
+      // volume. Chords go over full scale; the limiter in halden6.dsp catches them.
+      outGain: OUT_MAKEUP * P.vcaLevel * 1.2 * P.volume * P.volume,
     };
   }
 
@@ -68,30 +72,13 @@
     }
   }
 
-  // ---------- small helpers ----------
-  const set = (param, val) => param.setTargetAtTime(val, ctx.currentTime, 0.01);
-  const gain = val => { const n = ctx.createGain(); n.gain.value = val; return n; };
-
   // ---------- global graph ----------
   function start() {
     if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return; }
     ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const c = ctx;
-
-    // Faust output (voices + HPF + chorus, stereo). +12 dB makeup gain: one
-    // note peaked around -24 dBFS, too quiet; the limiter catches big chords.
-    g.bus = gain(4);
-    g.level = gain(1);
-    g.volume = gain(0.5);
-    g.limiter = c.createDynamicsCompressor();
-    g.limiter.threshold.value = -6; g.limiter.ratio.value = 12; g.limiter.knee.value = 6;
-    g.limiter.attack.value = 0.003; g.limiter.release.value = 0.2;
-
-    g.bus.connect(g.level).connect(g.volume).connect(g.limiter).connect(c.destination);
-    g.analyser = c.createAnalyser(); g.analyser.fftSize = 2048; // feeds the live scope
-    g.limiter.connect(g.analyser);
-
-    applyGlobals();
+    // Faust output (voices, HPF, chorus, gain, limiter) goes straight to the
+    // speakers. Level and volume live in the DSP so its limiter sees them.
+    g.analyser = ctx.createAnalyser(); g.analyser.fftSize = 2048; // feeds the live scope
     loadFaust();
   }
 
@@ -112,7 +99,8 @@
       try { node = await make(false); } catch (e) { node = null; }
       if (!node) { node = await make(true); engineMode = 'ScriptProcessor'; } else engineMode = 'AudioWorklet';
       if (!node) throw new Error('faustwasm returned no node');
-      node.connect(g.bus);
+      node.connect(ctx.destination);
+      node.connect(g.analyser);
       faust = node;
       pushDsp();
       const queued = pending; pending = [];
@@ -124,11 +112,6 @@
     } catch (e) {
       console.error('Halden 6: sound engine failed to load', e);
     }
-  }
-
-  function applyGlobals() {
-    set(g.level.gain, P.vcaLevel * 1.2);
-    set(g.volume.gain, P.volume * P.volume);
   }
 
   // ---------- voices ----------
@@ -194,7 +177,6 @@
     P[id] = value;
     if (!ctx) return;
     if ((id === 'ml' || id === 'gml') && changed) panic();
-    applyGlobals();
     pushDsp();
   }
 

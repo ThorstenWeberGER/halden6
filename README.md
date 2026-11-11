@@ -119,7 +119,7 @@ them on the clipboard to paste straight into the chat.
 | File | What it holds |
 |---|---|
 | `panel.js` | Every section and control. Add or move a control here. |
-| `synth.js` | Connects the UI to the sound engine; volume and limiter. |
+| `synth.js` | Connects the UI to the sound engine and maps fader positions to real units. |
 | `presets.js` | The 100 factory presets. |
 | `dsp/` | The synth voice, HPF and Juno-60 chorus in Faust, compiled to WebAssembly. See `dsp/README.md`. |
 | `vendor/` | faustwasm browser runtime (LGPL-2.1) and the junologue-chorus licence (MIT). |
