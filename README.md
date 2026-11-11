@@ -114,6 +114,55 @@ motion.
 Notes also stay in the browser between sessions. **Copy as Markdown** puts
 them on the clipboard to paste straight into the chat.
 
+## How it fits together
+
+One set of source files drives two products: the web page and the VST3 plugin.
+The sound is written once in Faust and compiled twice, the panel is the same
+HTML in both, and the controls, presets and arp patterns each exist once.
+
+```mermaid
+flowchart TB
+  subgraph shared["Shared source"]
+    direction LR
+    data["Data<br/>panel.js: every control<br/>presets.js: 100 sounds<br/>arp-patterns.js: 7 patterns"]
+    panelui["Panel<br/>index.html, ui.js, viz.js,<br/>arp.js, mapping.js, styles.css"]
+    dsp["Sound<br/>dsp/halden6.dsp in Faust:<br/>voices, filter, chorus, limiter"]
+  end
+
+  subgraph web["Web version"]
+    synth["synth.js<br/>notes, voices, arp clock"]
+    wasm["faustwasm<br/>WebAssembly engine"]
+  end
+
+  subgraph plugin["VST3 plugin, C++"]
+    bridge["bridge.js<br/>takes the place of synth.js"]
+    editor["PluginEditor<br/>resizable WebView2 window"]
+    proc["PluginProcessor<br/>parameters, presets, saved state"]
+    arpcpp["Arp<br/>clock in step with Live"]
+    engine["Engine<br/>6 voices and the effect"]
+  end
+
+  speakers(["Browser audio"])
+  live(["Ableton Live<br/>MIDI, tempo, automation, Live set"])
+
+  data --> panelui
+  panelui --> synth
+  panelui --> bridge
+  dsp -- "build.mjs" --> wasm
+  dsp -- "generate.mjs + Faust" --> engine
+  data -- "generate.mjs" --> proc
+  synth --> wasm --> speakers
+  bridge <--> editor <--> proc
+  live <--> proc
+  proc --> arpcpp --> engine
+  engine -- "audio" --> live
+```
+
+`plugin/tools/check.mjs` keeps the two products honest: it compares the
+plugin's value mappings and sound with the web version, and checks the arp's
+rules sample by sample. GitHub Actions runs it on every push, next to the
+Windows build and pluginval.
+
 ## Files
 
 | File | What it holds |
@@ -131,7 +180,7 @@ them on the clipboard to paste straight into the chat.
 | `ui.js` | Rendering, input, keyboard, comment mode. |
 | `styles.css` | Look, layout and skins. |
 | `fonts/` | Bundled font files and their licences. |
-| `docs/` | README images, the script that renders them, and the plugin plan. |
+| `docs/` | README images, the script that renders them, the plugin plan, and the next-steps checklist. |
 | `plugin/` | The VST3 plugin (JUCE, C++). See `plugin/README.md`. |
 | `install.cmd`, `install.ps1` | Build and install the plugin on Windows. |
 
