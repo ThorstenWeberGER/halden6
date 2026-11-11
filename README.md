@@ -162,6 +162,12 @@ These are not clear from the reference image and are open for discussion:
 - **Pitch wheel section** is labelled "Performance"; the bend faders are
   "Bend DCO" (up to 12 semitones) and "Bend VCF".
 
+## Licence
+
+Halden 6 is free software under the GNU Affero General Public License v3.0
+(`LICENSE`). Third-party code, fonts and their licences are listed in
+`THIRD-PARTY.md`.
+
 ---
 
 Halden 6 is an independent project and not affiliated with Roland. Juno and
