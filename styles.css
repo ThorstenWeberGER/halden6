@@ -730,5 +730,5 @@ textarea:focus { outline: none; border-color: var(--note); }
 
 /* Inside the plugin (plugin/web/bridge.js sets .plugin): no comment mode, audio
    is always on, and the BPM display shows Live's tempo (set it in Live) */
-.plugin #btn-comment, .plugin #btn-notes, .plugin #audio-status { display: none; }
+.plugin #audio-status { display: none; }
 .plugin [data-cid="bpm"] { pointer-events: none; opacity: 0.75; }

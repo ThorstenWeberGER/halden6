@@ -122,7 +122,7 @@ int main (int argc, char** argv)
         audio.stopThread (1000);
         return 1;
     }
-    check (! (bool) js (*ed, "getComputedStyle(document.querySelector('#btn-comment')).display !== 'none'"), "comment mode is hidden");
+    check (! (bool) js (*ed, "!!document.querySelector('#btn-comment')"), "no comment mode button");
     check (std::abs ((double) js (*ed, "Synth.params.vcfFreq") - 0.3) < 1e-6, "it shows Live's values from the start (VCF Freq 0.3)");
     check ((int) js (*ed, "document.querySelectorAll('.module').length") >= 10, "all sections are drawn");
     check (ed->getWidth() == 1280 && ed->getHeight() == 820, "the window opens at 1280 x 820 (" + juce::String (ed->getWidth()) + " x " + juce::String (ed->getHeight()) + ")");
