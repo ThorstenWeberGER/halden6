@@ -28,8 +28,8 @@ it is done.
       show the same name.
 - [ ] Arpeggiator: switch ARP on, hold a chord, press Play in Live. Notes sit
       on the beat; stop Live and the arp keeps going at Live's tempo.
-- [ ] Pitch bend: move your MIDI keyboard's pitch wheel; the panel's wheel
-      readout and the pitch follow.
+- [ ] Pitch bend: move your MIDI keyboard's pitch wheel; the pitch follows
+      (the panel's wheel does not move with it).
 - [ ] Volume: a single note at default volume is clearly audible in your
       headphones; big chords do not crackle.
 
