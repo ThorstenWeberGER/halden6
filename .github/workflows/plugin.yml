@@ -34,14 +34,14 @@ jobs:
           $p = Start-Process -FilePath .\pluginval\pluginval.exe -ArgumentList $pvArgs -NoNewWindow -Wait -PassThru
           if ($p.ExitCode -ne 0) { throw "pluginval found problems (exit code $($p.ExitCode))" }
       - name: Keep the plugin zip
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: Halden6-vst3-windows
           path: build/Halden6-vst3-*.zip
           if-no-files-found: error
       - name: Keep the pluginval report
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: pluginval-report
           path: build/pluginval
@@ -72,7 +72,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@v4
         with:
           name: Halden6-vst3-windows
       - name: The tag must match the version in plugin/CMakeLists.txt

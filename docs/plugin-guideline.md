@@ -222,6 +222,10 @@ in atomics, written to the ValueTree only in `getStateInformation`.
   agent's environment while logs are.
 - Release on tags: check that the tag matches the version in CMake, then
   `gh release create` with `contents: write` only on that job.
+- Do not jump to the newest major version of an action blindly: in our runs
+  `actions/upload-artifact@v7` hung for over 15 minutes uploading the plugin
+  zip, while `@v4` uploaded it in seconds. Change one action at a time and
+  watch the next run.
 
 ### 5.6 Agent environment (sandboxed cloud session)
 - Running downloaded binaries may be blocked; building from source with the
