@@ -572,12 +572,21 @@
   function updateAudioStatus() {
     const st = S.state(), pill = $('#audio-status');
     const on = st === 'running';
-    pill.textContent = on ? 'Audio on' : st === 'loading' ? 'Starting audio…' : 'Audio off · click anywhere';
+    pill.textContent = on ? 'Audio on' : st === 'loading' ? 'Starting audio…' : 'Audio off · tap or click anywhere';
     pill.classList.toggle('pill-live', on);
     pill.classList.toggle('pill-muted', !on);
   }
-  const unlock = () => { S.start(); setTimeout(updateAudioStatus, 100); };
-  window.addEventListener('pointerdown', unlock, { once: true });
+  // Browsers start audio only inside a user gesture. Phones count the finger
+  // lifting (pointerup, touchend, click), not touching down, so listen to all
+  // of them until the audio really runs.
+  const unlock = () => {
+    S.start();
+    setTimeout(() => {
+      updateAudioStatus();
+      if (S.state() === 'running') ['pointerdown', 'pointerup', 'touchend', 'click'].forEach(t => window.removeEventListener(t, unlock, true));
+    }, 100);
+  };
+  ['pointerdown', 'pointerup', 'touchend', 'click'].forEach(t => window.addEventListener(t, unlock, true));
   window.addEventListener('halden6-ready', updateAudioStatus);
   window.addEventListener('keydown', unlock, { once: true });
 

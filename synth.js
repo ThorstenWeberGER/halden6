@@ -37,7 +37,9 @@
 
   // ---------- global graph ----------
   function start() {
-    if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return; }
+    if (ctx) { if (ctx.state !== 'running') ctx.resume(); return; }
+    // iPhone: play like a music app, so the ring/silent switch does not mute it
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
     ctx = new (window.AudioContext || window.webkitAudioContext)();
     // Faust output (voices, HPF, chorus, gain, limiter) goes straight to the
     // speakers. Level and volume live in the DSP so its limiter sees them.
