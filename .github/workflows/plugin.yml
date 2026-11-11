@@ -30,8 +30,8 @@ jobs:
           Expand-Archive pluginval.zip -DestinationPath pluginval
           $plugin = Resolve-Path 'build\Stable\Halden6_artefacts\Release\VST3\Halden 6.vst3'
           # pluginval is a GUI program: PowerShell does not wait for it on its own
-          $args = @('--strictness-level', '5', '--validate-in-process', '--output-dir', 'build\pluginval', '--validate', "`"$plugin`"")
-          $p = Start-Process -FilePath .\pluginval\pluginval.exe -ArgumentList $args -NoNewWindow -Wait -PassThru
+          $pvArgs = @('--strictness-level', '5', '--validate-in-process', '--output-dir', 'build\pluginval', '--validate', "`"$plugin`"")
+          $p = Start-Process -FilePath .\pluginval\pluginval.exe -ArgumentList $pvArgs -NoNewWindow -Wait -PassThru
           if ($p.ExitCode -ne 0) { throw "pluginval found problems (exit code $($p.ExitCode))" }
       - name: Keep the plugin zip
         uses: actions/upload-artifact@v7
