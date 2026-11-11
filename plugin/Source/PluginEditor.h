@@ -34,6 +34,8 @@ private:
     std::vector<float> scope;
     double lastBpm = 0.0;
     bool sizeRestored = false;
+    int lastPresetNum = -1;
+    bool lastPresetEdited = false;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Halden6Editor)
 };

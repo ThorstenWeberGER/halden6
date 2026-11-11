@@ -59,6 +59,9 @@
   if (backend) {
     backend.addEventListener('params', applyFromPlugin);
     backend.addEventListener('scope', msg => { scope = msg.data; });
+    backend.addEventListener('preset', msg => {
+      window.dispatchEvent(new CustomEvent('halden6-preset', { detail: msg }));
+    });
     backend.addEventListener('host', msg => {
       if (msg.bpm && msg.bpm !== P.bpm) { P.bpm = msg.bpm; if (window.Viz) window.Viz.update(); }
     });
@@ -79,6 +82,9 @@
     },
     panic: () => send({ type: 'panic' }),
     setParam,
+    // The preset shown in the panel, saved with the Live set
+    initialPreset: ((window.__JUCE__ && window.__JUCE__.initialisationData && window.__JUCE__.initialisationData.preset) || [])[0] || null,
+    presetChanged: (num, edited) => send({ type: 'preset', num, edited }),
     beginGesture(id) { if (pluginIds.has(id)) { gesture = id; send({ type: 'gesture', id, on: true }); } },
     endGesture(id) { if (gesture === id) { gesture = null; send({ type: 'gesture', id, on: false }); } },
     format: M.format,

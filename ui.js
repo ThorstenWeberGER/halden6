@@ -485,8 +485,8 @@
   new ResizeObserver(() => buildKeyboard()).observe(kb);
 
   // ---------- presets ----------
-  // The plugin does not keep the preset name per Live set yet (phase 5)
-  const savedPreset = S.isPlugin ? null : store.get('halden6-preset-v1', null);
+  // In the plugin the preset belongs to the Live set
+  const savedPreset = S.isPlugin ? S.initialPreset : store.get('halden6-preset-v1', null);
   currentPreset = savedPreset ? window.PRESETS.find(p => p.num === savedPreset.num) || null : null;
   presetEdited = !!(savedPreset && savedPreset.edited);
   let presetCat = 'All', presetQuery = '';
@@ -496,7 +496,8 @@
     $('#preset-label').textContent = currentPreset ? currentPreset.name + (presetEdited ? ' *' : '') : 'Your patch';
     $('#preset-meta').textContent = currentPreset ? `${currentPreset.cat} · ${currentPreset.genre}` : '';
     $('#preset-open').title = presetEdited ? 'Edited since loading (*). Open the preset library' : 'Open the preset library';
-    store.set('halden6-preset-v1', currentPreset ? { num: currentPreset.num, edited: presetEdited } : null);
+    if (S.isPlugin) S.presetChanged(currentPreset ? currentPreset.num : 0, presetEdited);
+    else store.set('halden6-preset-v1', currentPreset ? { num: currentPreset.num, edited: presetEdited } : null);
     document.querySelectorAll('.preset-row').forEach(r => r.classList.toggle('active', currentPreset && +r.dataset.num === currentPreset.num));
   };
 
@@ -782,6 +783,14 @@
       if (id === 'lfoTempo' && controlIndex.lfoRate) controlIndex.lfoRate.render();
       if (window.Viz) Viz.update();
       if (!presetLoading && PRESET_IDS.has(id) && currentPreset && !presetEdited) { presetEdited = true; renderPresetBar(); }
+    });
+
+    // A preset chosen in Live's preset menu
+    window.addEventListener('halden6-preset', e => {
+      const { num, edited } = e.detail;
+      currentPreset = window.PRESETS.find(p => p.num === num) || null;
+      presetEdited = !!edited;
+      renderPresetBar();
     });
 
     // A drag is one gesture for Live, so it records automation and undoes as

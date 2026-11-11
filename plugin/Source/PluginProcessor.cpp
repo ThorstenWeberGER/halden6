@@ -1,5 +1,6 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "generated/Presets.h"
 
 using namespace halden6;
 
@@ -151,10 +152,53 @@ juce::AudioProcessorEditor* Halden6Processor::createEditor()
     return new Halden6Editor (*this);
 }
 
+// ---------------------------------------------------------------- presets
+
+int Halden6Processor::getNumPrograms() { return kNumPresets; }
+
+int Halden6Processor::getCurrentProgram() { return juce::jmax (0, presetNum.load() - 1); }
+
+const juce::String Halden6Processor::getProgramName (int index)
+{
+    if (! juce::isPositiveAndBelow (index, kNumPresets))
+        return {};
+    const auto& p = kPresets[index];
+    return juce::String (p.num).paddedLeft ('0', 3) + " " + juce::String::fromUTF8 (p.name);
+}
+
+// Loading a preset changes the sound only, as in the panel: arpeggiator,
+// tempo and volume stay as they are
+void Halden6Processor::setCurrentProgram (int index)
+{
+    if (! juce::isPositiveAndBelow (index, kNumPresets))
+        return;
+    const auto& p = kPresets[index];
+    for (int i = 0; i < p.numValues; ++i)
+    {
+        auto* param = state.getParameter (kParams[p.values[i].param].id);
+        param->setValueNotifyingHost (param->convertTo0to1 (p.values[i].value));
+    }
+    presetNum = p.num;
+    presetEdited = false;
+}
+
+void Halden6Processor::setPresetFromPanel (int num, bool edited)
+{
+    if (num == presetNum.load() && edited == presetEdited.load())
+        return;
+    const bool programChanged = num != presetNum.load();
+    presetNum = juce::jlimit (0, kNumPresets, num);
+    presetEdited = edited;
+    if (programChanged)
+        updateHostDisplay (ChangeDetails().withProgramChanged (true));
+}
+
 void Halden6Processor::getStateInformation (juce::MemoryBlock& destData)
 {
     auto tree = state.copyState();
     tree.setProperty ("stateVersion", kStateVersion, nullptr);
+    tree.setProperty ("preset", presetNum.load(), nullptr);
+    tree.setProperty ("presetEdited", presetEdited.load(), nullptr);
     if (auto xml = tree.createXml())
         copyXmlToBinary (*xml, destData);
 }
@@ -163,7 +207,12 @@ void Halden6Processor::setStateInformation (const void* data, int sizeInBytes)
 {
     if (auto xml = getXmlFromBinary (data, sizeInBytes))
         if (xml->hasTagName (state.state.getType()))
-            state.replaceState (juce::ValueTree::fromXml (*xml));
+        {
+            const auto tree = juce::ValueTree::fromXml (*xml);
+            presetNum = juce::jlimit (0, kNumPresets, (int) tree.getProperty ("preset", 0));
+            presetEdited = (bool) tree.getProperty ("presetEdited", false);
+            state.replaceState (tree);
+        }
 }
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()

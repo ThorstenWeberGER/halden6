@@ -60,6 +60,13 @@ Result play (juce::AudioPluginInstance& p, double seconds, int block, juce::Midi
     return r;
 }
 
+// The plugin's own parameters, not the ones JUCE's VST3 wrapper adds
+bool isSoundParam (juce::AudioProcessorParameter* q)
+{
+    const auto name = q->getName (64);
+    return ! name.startsWith ("MIDI CC") && name != "Bypass" && name != "Program";
+}
+
 juce::MidiBuffer chord (std::initializer_list<int> notes, bool on)
 {
     juce::MidiBuffer m;
@@ -119,8 +126,8 @@ int main (int argc, char** argv)
     check (p->acceptsMidi() && p->getTotalNumOutputChannels() == 2, "MIDI in, stereo out");
     int own = 0;
     for (auto* q : p->getParameters())
-        own += q->getName (64).startsWith ("MIDI CC") ? 0 : 1;
-    check (own == 38, "it has 37 sound parameters plus Bypass (" + juce::String (own) + "; JUCE adds hidden MIDI controller slots)");
+        own += isSoundParam (q) ? 1 : 0;
+    check (own == 37, "it has 37 sound parameters (" + juce::String (own) + "; JUCE adds Bypass, Program and hidden MIDI controller slots)");
     check (param (*p, "VCF Freq") != nullptr && param (*p, "ENV R") != nullptr, "parameters carry readable names (VCF Freq, ENV R)");
     check (p->getLatencySamples() == 240, "it reports the limiter's 5 ms lookahead as latency (" + juce::String (p->getLatencySamples()) + " frames)");
 
@@ -186,6 +193,27 @@ int main (int argc, char** argv)
     stop.addEvent (juce::MidiMessage::allNotesOff (1), 0);
     play (*p, 12.0, 512, stop);
 
+    // ---- presets in the host's menu
+    std::cout << "Presets" << std::endl;
+    check (p->getNumPrograms() == 100, "Live's preset menu lists " + juce::String (p->getNumPrograms()) + " presets");
+    check (p->getProgramName (0) == "001 Halden Sub Bass" && p->getProgramName (99).startsWith ("100 "),
+           "with their names (" + p->getProgramName (0) + " ... " + p->getProgramName (99) + ")");
+    p->setCurrentProgram (3);   // 004 Acid Squelch: G-ML on, resonance 0.82
+    check (p->getCurrentProgram() == 3, "choosing one makes it the current preset");
+    check (param (*p, "G-ML")->getValue() > 0.5f && std::abs (param (*p, "VCF Res")->getValue() - 0.82f) < 1e-4f,
+           "and sets its sound (G-ML on, VCF Res 0.82)");
+    juce::MemoryBlock withPreset;
+    p->getStateInformation (withPreset);
+    {
+        auto r2 = create (48000, 512);
+        r2->setStateInformation (withPreset.getData(), (int) withPreset.getSize());
+        check (r2->getCurrentProgram() == 3, "the chosen preset is saved with the set");
+        r2->releaseResources();
+    }
+    juce::MidiBuffer off;
+    off.addEvent (juce::MidiMessage::allNotesOff (1), 0);
+    play (*p, 0.1, 512, off);
+
     // ---- state: save, load into a fresh instance
     std::cout << "Saved state" << std::endl;
     param (*p, "ENV R")->setValueNotifyingHost (0.9f);
@@ -214,7 +242,7 @@ int main (int argc, char** argv)
     // exactly like the restored one (both start from the same DSP state)
     auto byHand = create (48000, 512);
     for (int i = 0; i < p->getParameters().size(); ++i)
-        if (! p->getParameters()[i]->getName (64).startsWith ("MIDI CC"))
+        if (isSoundParam (p->getParameters()[i]))
             byHand->getParameters()[i]->setValueNotifyingHost (p->getParameters()[i]->getValue());
     const auto a = play (*byHand, 0.5, 512, chord ({ 57, 60, 64 }, true));
     const auto b = play (*q, 0.5, 512, chord ({ 57, 60, 64 }, true));

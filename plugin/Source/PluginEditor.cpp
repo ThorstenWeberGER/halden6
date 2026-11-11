@@ -8,6 +8,14 @@ namespace
     constexpr int kDefaultWidth = 1280, kDefaultHeight = 820;
     constexpr int kScopeSize = 2048;   // what viz.js reads from its analyser
 
+    juce::var presetInfo (int num, bool edited)
+    {
+        auto* obj = new juce::DynamicObject();
+        obj->setProperty ("num", num);
+        obj->setProperty ("edited", edited);
+        return juce::var (obj);
+    }
+
     const char* mimeType (const juce::String& file)
     {
         if (file.endsWith (".html")) return "text/html; charset=utf-8";
@@ -80,6 +88,7 @@ juce::WebBrowserComponent::Options Halden6Editor::options()
         .withKeepPageLoadedWhenBrowserIsHidden()
         .withResourceProvider ([] (const juce::String& path) { return serve (path); })
         .withInitialisationData ("params", allValues())
+        .withInitialisationData ("preset", presetInfo (proc.presetNumber(), proc.presetIsEdited()))
         .withEventListener ("halden6", [this] (const juce::var& msg) { handleMessage (msg); });
 }
 
@@ -156,6 +165,17 @@ void Halden6Editor::timerCallback()
     if (changed != nullptr)
         sendValues (juce::var (changed.get()));
 
+    // A preset chosen in Live's menu (after its values, so the panel does not
+    // mark it as edited)
+    const int num = proc.presetNumber();
+    const bool edited = proc.presetIsEdited();
+    if (num != lastPresetNum || edited != lastPresetEdited)
+    {
+        lastPresetNum = num;
+        lastPresetEdited = edited;
+        web.emitEventIfBrowserIsVisible ("preset", presetInfo (num, edited));
+    }
+
     // The live scope
     proc.copyScope (scope.data(), kScopeSize);
     juce::Array<juce::var> data;
@@ -212,6 +232,13 @@ void Halden6Editor::handleMessage (const juce::var& msg)
     else if (type == "panic")
     {
         proc.addPanelMidi (juce::MidiMessage::allNotesOff (1));
+    }
+    else if (type == "preset")
+    {
+        // The panel loaded or edited a preset
+        lastPresetNum = (int) msg["num"];
+        lastPresetEdited = (bool) msg["edited"];
+        proc.setPresetFromPanel (lastPresetNum, lastPresetEdited);
     }
     else if (type == "ready")
     {

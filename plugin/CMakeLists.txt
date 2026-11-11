@@ -67,8 +67,7 @@ target_compile_definitions(Halden6 PUBLIC
   JUCE_WEB_BROWSER=1
   JUCE_USE_WIN_WEBVIEW2_WITH_STATIC_LINKING=1   # no WebView2Loader.dll to ship next to the plugin
   JUCE_USE_CURL=0
-  JUCE_VST3_CAN_REPLACE_VST2=0
-  JUCE_DISPLAY_SPLASH_SCREEN=0)
+  JUCE_VST3_CAN_REPLACE_VST2=0)
 
 target_link_libraries(Halden6
   PRIVATE

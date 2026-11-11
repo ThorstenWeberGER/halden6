@@ -208,6 +208,9 @@ if ($Wv2Licence) {
   $res = Join-Path $Built 'Contents\Resources'
   New-Item -ItemType Directory -Force -Path $res | Out-Null
   Copy-Item $Wv2Licence.FullName (Join-Path $res 'WebView2-SDK-LICENSE.txt') -Force
+  Say "Added the WebView2 SDK licence ($($Wv2Licence.Name)) to the plugin"
+} else {
+  Say 'Warning: no licence file found in the WebView2 SDK package; the plugin ships without its notice'
 }
 Say "Built $Built"
 

@@ -156,6 +156,14 @@ int main (int argc, char** argv)
            "and is not marked as edited when its values come back from Live");
     check (std::abs (value (proc, "vcfFreq") - (float) (double) js (*ed, "Synth.params.vcfFreq")) < 1e-4f, "and its values reach Live (VCF Freq)");
 
+    check (proc.getCurrentProgram() == 0 && proc.presetNumber() == 1, "Live's preset menu follows the panel (preset 1)");
+    proc.setCurrentProgram (82);   // 083 in Live's menu
+    pump (400);
+    check ((int) js (*ed, "document.querySelector('#preset-num').textContent.trim() === '083' ? 1 : 0") == 1
+             && ! (bool) js (*ed, "document.querySelector('#preset-label').textContent.includes('*')"),
+           "a preset chosen in Live's menu shows in the panel, not marked as edited");
+    check (std::abs (value (proc, "vcfFreq") - (float) (double) js (*ed, "Synth.params.vcfFreq")) < 1e-4f, "and the panel shows its values");
+
     std::cout << "Keys and scope" << std::endl;
     audio.peak = 0.0f;
     js (*ed, "Synth.noteOn(60, 0.9); Synth.noteOn(64, 0.9); true");

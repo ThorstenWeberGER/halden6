@@ -1,9 +1,10 @@
 # Plan: Halden 6 as an open-source VST3 plugin for Ableton Live
 
-Status (2026-11-11): phases 0 to 3 are built and tested on Linux, not yet in
-Live on Windows. Next: run `install.cmd` on Windows and work through the
-"Done when" checks of phases 1 to 3 in Live, then decide on phase 4. See
-`plugin/README.md`.
+Status (2026-11-11): phases 0 to 3 and the sound presets of phase 5 are built
+and tested on Linux; the Windows build runs in GitHub Actions on every push.
+Not yet tried in Live. Next: run `install.cmd` on Windows and work through the
+"Done when" checks in Live, then decide on phase 4 (with the 7 arp patterns
+from phase 5). See `plugin/README.md`.
 Written 2026-11-10.
 
 ## Goal
