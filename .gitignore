@@ -1,2 +1,5 @@
 ﻿# Screenshot of a commercial product, kept locally as a reference only
 reference/
+plugin/tools/build/
+build/
+build-*/

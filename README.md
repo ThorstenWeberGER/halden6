@@ -16,6 +16,10 @@ to WebAssembly. No install, no server, no account.
 
 ## Run it
 
+On any device, phone included: **https://thorstenweberger.github.io/halden6/**
+(published from `main` by `.github/workflows/pages.yml`). Tap once to start
+audio, then play the on-screen keys.
+
 Open `index.html` in Chrome or Edge (double-click works, no server or install).
 Click once anywhere to start audio, then play with the mouse or the keyboard.
 
@@ -114,30 +118,102 @@ motion.
 Notes also stay in the browser between sessions. **Copy as Markdown** puts
 them on the clipboard to paste straight into the chat.
 
+## How it fits together
+
+One set of source files drives two products: the web page and the VST3 plugin.
+The sound is written once in Faust and compiled twice, the panel is the same
+HTML in both, and the controls, presets and arp patterns each exist once.
+
+```mermaid
+flowchart TB
+  subgraph shared["Shared source"]
+    direction LR
+    data["Data<br/>panel.js: every control<br/>presets.js: 100 sounds<br/>arp-patterns.js: 7 patterns"]
+    panelui["Panel<br/>index.html, ui.js, viz.js,<br/>arp.js, mapping.js, styles.css"]
+    dsp["Sound<br/>dsp/halden6.dsp in Faust:<br/>voices, filter, chorus, limiter"]
+  end
+
+  subgraph web["Web version"]
+    synth["synth.js<br/>notes, voices, arp clock"]
+    wasm["faustwasm<br/>WebAssembly engine"]
+  end
+
+  subgraph plugin["VST3 plugin, C++"]
+    bridge["bridge.js<br/>takes the place of synth.js"]
+    editor["PluginEditor<br/>resizable WebView2 window"]
+    proc["PluginProcessor<br/>parameters, presets, saved state"]
+    arpcpp["Arp<br/>clock in step with Live"]
+    engine["Engine<br/>6 voices and the effect"]
+  end
+
+  speakers(["Browser audio"])
+  live(["Ableton Live<br/>MIDI, tempo, automation, Live set"])
+
+  data --> panelui
+  panelui --> synth
+  panelui --> bridge
+  dsp -- "build.mjs" --> wasm
+  dsp -- "generate.mjs + Faust" --> engine
+  data -- "generate.mjs" --> proc
+  synth --> wasm --> speakers
+  bridge <--> editor <--> proc
+  live <--> proc
+  proc --> arpcpp --> engine
+  engine -- "audio" --> live
+```
+
+`plugin/tools/check.mjs` keeps the two products honest: it compares the
+plugin's value mappings and sound with the web version, and checks the arp's
+rules sample by sample. GitHub Actions runs it on every push, next to the
+Windows build and pluginval.
+
 ## Files
 
 | File | What it holds |
 |---|---|
 | `panel.js` | Every section and control. Add or move a control here. |
-| `synth.js` | Connects the UI to the sound engine; volume and limiter. |
+| `synth.js` | Connects the UI to the browser sound engine. |
+| `mapping.js` | Fader positions to real units and readout text, shared with the plugin. |
 | `presets.js` | The 100 factory presets. |
 | `dsp/` | The synth voice, HPF and Juno-60 chorus in Faust, compiled to WebAssembly. See `dsp/README.md`. |
 | `vendor/` | faustwasm browser runtime (LGPL-2.1) and the junologue-chorus licence (MIT). |
 | `viz.js` | Section graphs and the live output scope. |
 | `backdrop.js` | Octagon backdrop behind the main panel, coloured per skin. |
 | `arp.js` | Arpeggiator: clock, modes, recording, pattern editor, slots. |
+| `arp-patterns.js` | The example pattern and the 7 factory patterns, shared with the plugin. |
 | `ui.js` | Rendering, input, keyboard, comment mode. |
 | `styles.css` | Look, layout and skins. |
 | `fonts/` | Bundled font files and their licences. |
-| `docs/` | README images, the script that renders them, and the plugin plan. |
+| `docs/` | README images, the script that renders them, the plugin plan, the next-steps checklist, and a guideline for building another plugin this way. |
+| `plugin/` | The VST3 plugin (JUCE, C++). See `plugin/README.md`. |
+| `install.cmd`, `install.ps1` | Build and install the plugin on Windows. |
 
 Plain HTML, CSS and JavaScript with no build step.
 
-## Next: a VST3 plugin for Ableton Live
+## Halden 6 in Ableton Live (VST3 plugin, Windows)
 
-The plan is to ship Halden 6 as an open-source VST3 instrument for Ableton Live
-on Windows, built with JUCE. It will reuse this panel and the same Faust sound
-engine, and the web version stays. See [docs/plugin-plan.md](docs/plugin-plan.md).
+The same synth as a VST3 instrument for Ableton Live on Windows: this panel in
+a window you can resize freely, every control automatable, the patch saved in
+the Live set, the 100 presets in Live's preset menu, and the arpeggiator in
+step with Live (it follows loops and tempo, and export and freeze play exactly
+what you heard). The window needs the Microsoft Edge WebView2 Runtime, which
+Windows 11 includes.
+
+Two ways to install it:
+
+- **The release zip** (no build tools needed): download `Halden6-vst3-<version>.zip`
+  from the GitHub releases, close Live, and copy the `Halden 6.vst3` folder from
+  it to `C:\Program Files\Common Files\VST3`.
+- **From this repository**: double-click `install.cmd`. It checks for Git,
+  CMake and the Visual Studio 2022 C++ tools (and offers to install them),
+  builds the plugin and copies it to your VST3 folder.
+  `install.ps1 -Uninstall` removes it again.
+
+Then in Live: Settings > Plug-Ins, turn on "Use VST3 Plug-In System Folders",
+click Rescan, and drop Halden 6 (under Plug-Ins > Halden) on a MIDI track.
+
+How the plugin is built and tested: [plugin/README.md](plugin/README.md). The
+plan behind it: [docs/plugin-plan.md](docs/plugin-plan.md).
 
 ### Refresh the README images
 
@@ -161,6 +237,12 @@ These are not clear from the reference image and are open for discussion:
 - **ML / G-ML**: one note at a time; G-ML adds an 80 ms glide. Each new note restarts the envelope (no true legato yet).
 - **Pitch wheel section** is labelled "Performance"; the bend faders are
   "Bend DCO" (up to 12 semitones) and "Bend VCF".
+
+## Licence
+
+Halden 6 is free software under the GNU Affero General Public License v3.0
+(`LICENSE`). Third-party code, fonts and their licences are listed in
+`THIRD-PARTY.md`.
 
 ---
 

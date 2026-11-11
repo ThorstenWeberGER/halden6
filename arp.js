@@ -8,9 +8,15 @@
 //
 // Timing uses the audio clock with a short look-ahead, so notes land exactly
 // on the beat even when the browser is busy.
+//
+// Inside the plugin (Synth.isPlugin) this file is the editor only: the clock
+// runs in C++ (plugin/Source/Arp.cpp) in step with Live. The pattern and the
+// slots are sent to the plugin and saved in the Live set, and the plugin
+// sends back the playhead.
 
 (function () {
   const S = window.Synth, P = S.params;
+  const external = !!S.isPlugin; // the plugin runs the clock
   const RATE_STEPS = [1, 2, 3, 4, 6, 8]; // steps per beat for 1/4, 1/8, 1/8T, 1/16, 1/16T, 1/32
   const NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
   const MAX_STEPS = 16;
@@ -22,46 +28,10 @@
   const stepDur = () => 60 / P.bpm / RATE_STEPS[P.arpRate];
   const blankStep = note => ({ on: false, note: note || ROOT, vel: 0.8, gate: 0.75, tie: false });
 
-  // Example pattern so the grid shows what it does on first open
-  const EXAMPLE = {
-    length: 16,
-    steps: [
-      [60, 1.0, 0.5], [60, 0.55, 0.3], [67, 0.8, 0.5], [72, 0.9, 0.6],
-      null, [70, 0.7, 0.4], [67, 0.75, 0.5], [65, 0.6, 0.3],
-      [60, 1.0, 0.5], [63, 0.6, 0.4], [67, 0.85, 1, true], [67, 0.6, 0.5],
-      null, [72, 0.9, 0.4], [70, 0.65, 0.4], [67, 0.7, 0.8],
-    ].map(s => s ? { on: true, note: s[0], vel: s[1], gate: s[2], tie: !!s[3] } : blankStep(60)),
-  };
-
-  // Factory patterns in typical 80s styles. These are original patterns
-  // written for this synth, not transcriptions of specific songs.
-  // Step: [note, velocity, gate, tie] or null for a rest. Notes are MIDI
-  // numbers written for C (C3 = 48, C4 = 60); the held key transposes them.
-  const st = (n, v = 0.8, g = 0.5, tie = false) => ({ on: true, note: n, vel: v, gate: g, tie });
-  const build = list => list.map(x => (x ? st(...x) : blankStep(60)));
-  const PRESETS = [
-    { name: 'Italo Octaves', bpm: 118, rate: 3, swing: 0, info: 'octave-jumping disco bass, C - Ab - Bb',
-      steps: build([[48, 0.95, 0.4], [60, 0.6, 0.3], [48, 0.8, 0.4], [60, 0.65, 0.3], [48, 0.9, 0.4], [60, 0.6, 0.3], [48, 0.8, 0.4], [60, 0.65, 0.3],
-                    [44, 0.95, 0.4], [56, 0.6, 0.3], [44, 0.8, 0.4], [56, 0.65, 0.3], [46, 0.9, 0.4], [58, 0.6, 0.3], [46, 0.8, 0.4], [58, 0.7, 0.3]]) },
-    { name: 'Hi-NRG Gallop', bpm: 128, rate: 3, swing: 0, info: 'galloping one-note bass, up a third at the end',
-      steps: build([[48, 1, 0.4], null, [48, 0.6, 0.3], [48, 0.75, 0.3], [48, 1, 0.4], null, [48, 0.6, 0.3], [48, 0.75, 0.3],
-                    [48, 1, 0.4], null, [48, 0.6, 0.3], [48, 0.75, 0.3], [51, 1, 0.4], null, [51, 0.6, 0.3], [53, 0.8, 0.3]]) },
-    { name: 'Synthpop Arp', bpm: 112, rate: 3, swing: 0, info: 'C minor and Ab major broken chords',
-      steps: build([[60, 1, 0.5], [63, 0.6, 0.4], [67, 0.7, 0.4], [72, 0.8, 0.4], [67, 0.9, 0.5], [63, 0.6, 0.4], [60, 0.7, 0.4], [63, 0.65, 0.4],
-                    [56, 1, 0.5], [60, 0.6, 0.4], [63, 0.7, 0.4], [68, 0.8, 0.4], [63, 0.9, 0.5], [60, 0.6, 0.4], [56, 0.7, 0.4], [60, 0.65, 0.4]]) },
-    { name: 'Electro Funk', bpm: 106, rate: 3, swing: 0.35, info: 'syncopated minor bass with swing',
-      steps: build([[48, 1, 0.3], null, null, [48, 0.7, 0.2], null, [51, 0.8, 0.3], [53, 0.75, 1, true], null,
-                    [48, 0.9, 0.3], null, [55, 0.8, 0.3], null, [58, 0.85, 0.4], null, [55, 0.7, 0.3], [53, 0.6, 0.3]]) },
-    { name: 'New Wave Drive', bpm: 136, rate: 1, swing: 0, info: 'straight eighths, root then fifth and seventh',
-      steps: build([[48, 0.95, 0.7], [48, 0.6, 0.7], [48, 0.85, 0.7], [48, 0.6, 0.7], [48, 0.85, 0.7], [48, 0.6, 0.7], [55, 0.8, 0.7], [58, 0.75, 0.7],
-                    [46, 0.95, 0.7], [46, 0.6, 0.7], [46, 0.85, 0.7], [46, 0.6, 0.7], [46, 0.85, 0.7], [46, 0.6, 0.7], [53, 0.8, 0.7], [55, 0.75, 0.7]]) },
-    { name: 'Night Drive', bpm: 96, rate: 3, swing: 0, info: 'moody soundtrack sequence, Cm9 to Bb',
-      steps: build([[60, 1, 0.5], [67, 0.6, 0.4], [72, 0.75, 0.4], [75, 0.7, 0.5], [74, 0.9, 0.5], [72, 0.6, 0.4], [67, 0.7, 0.4], [63, 0.6, 0.5],
-                    [58, 1, 0.5], [65, 0.6, 0.4], [70, 0.75, 0.4], [74, 0.7, 0.5], [72, 0.9, 0.5], [70, 0.6, 0.4], [65, 0.7, 0.4], [62, 0.6, 0.6]]) },
-    { name: 'Minimal Wave', bpm: 124, rate: 1, swing: 0, length: 8, info: 'eight-step cold-wave loop',
-      steps: build([[60, 1, 0.2], [60, 0.6, 0.8], [63, 0.8, 0.2], [60, 0.6, 0.6], [67, 0.9, 0.2], [60, 0.6, 0.8], [65, 0.8, 0.3], [63, 0.7, 0.9],
-                    null, null, null, null, null, null, null, null]) },
-  ];
+  // Example and factory patterns live in arp-patterns.js (shared with the plugin)
+  const toSteps = list => list.map(x => (x ? { on: true, note: x[0], vel: x[1] ?? 0.8, gate: x[2] ?? 0.5, tie: !!x[3] } : blankStep(60)));
+  const EXAMPLE = { length: window.ARP_PATTERNS.example.length || 16, steps: toSteps(window.ARP_PATTERNS.example.steps) };
+  const PRESETS = window.ARP_PATTERNS.factory.map(p => ({ ...p, steps: toSteps(p.steps) }));
 
   let api = null;            // helpers from ui.js
   let pat = null;            // { length, steps[16] }
@@ -83,8 +53,8 @@
 
   // ---------- persistence ----------
   const copyPattern = p => ({ length: p.length, steps: p.steps.map(s => ({ ...s })) });
-  const savePattern = () => api.store.set('halden6-arp-pattern-v1', pat);
-  const saveSlots = () => api.store.set('halden6-arp-slots-v1', slots);
+  const savePattern = () => (external ? S.setArpPattern(pat) : api.store.set('halden6-arp-pattern-v1', pat));
+  const saveSlots = () => (external ? S.setArpSlots(slots) : api.store.set('halden6-arp-slots-v1', slots));
 
   // ---------- engine ----------
   function startClock() {
@@ -151,7 +121,7 @@
   // ---------- key input (called by ui.js) ----------
   function keyDown(note, vel) {
     if (recording) { recordNote(note, vel); return false; } // still sounds normally
-    if (!P.arpOn) return false;
+    if (external || !P.arpOn) return false; // in the plugin, keys go to the C++ arp
     if (P.arpLatch && down.size === 0) held = []; // a new chord replaces the latched one
     down.add(note); consumed.add(note); vels[note] = vel;
     if (!held.includes(note)) held.push(note);
@@ -161,6 +131,7 @@
   }
 
   function keyUp(note) {
+    if (external) return false;
     down.delete(note);
     if (!consumed.delete(note)) return false;
     if (!P.arpLatch) {
@@ -177,6 +148,7 @@
   }
 
   function paramChanged(id) {
+    if (external) { updateHandle(); return; }
     if (id === 'arpOn' && !P.arpOn) { held = []; stopClock(); }
     if (id === 'arpLatch' && !P.arpLatch) {
       held = held.filter(n => down.has(n));
@@ -454,12 +426,18 @@
 
   function init(helpers) {
     api = helpers;
-    const savedPat = api.store.get('halden6-arp-pattern-v1', null);
+    const saved = external ? S.initialArp() : null;
+    const savedPat = external ? saved.pattern : api.store.get('halden6-arp-pattern-v1', null);
     pat = savedPat && Array.isArray(savedPat.steps) && savedPat.steps.length === MAX_STEPS ? savedPat : copyPattern(EXAMPLE);
-    const savedSlots = api.store.get('halden6-arp-slots-v1', null);
+    const savedSlots = external ? saved.slots : api.store.get('halden6-arp-slots-v1', null);
     slots = Array.isArray(savedSlots) && savedSlots.length === 8 ? savedSlots : Array(8).fill(null);
     updateHandle();
   }
 
-  window.Arp = { init, renderPattern, keyDown, keyUp, stopAll, paramChanged, updateHandle };
+  window.Arp = {
+    init, renderPattern, keyDown, keyUp, stopAll, paramChanged, updateHandle,
+    // for the plugin: the playhead it sends back, and recording from Live's MIDI keyboard
+    showPlayhead: i => setPlayhead(i),
+    isRecording: () => recording,
+  };
 })();

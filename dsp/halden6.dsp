@@ -102,7 +102,7 @@ softLimit(x) = x * (27 + x * x) / (27 + 9 * x * x);
 tri(f)       = (os.lf_triangle(f) + 1) / 2;         // unipolar triangle, like SimpleLFO::triangle_uni
 p1 = tri(0.513);                                    // chorus I rate
 p2 = tri(0.863);                                    // chorus II rate
-maxDelay = 512;                                     // samples, enough for 5.4 ms at 96 kHz
+maxDelay = 1024;                                    // samples: the longest tap is 5.4 ms, 519 samples at 96 kHz
 tL(p) = (0.00154 + (0.00515 - 0.00154) * p) * ma.SR;
 tR(p) = (0.00151 + (0.00540 - 0.00151) * p) * ma.SR;
 gA  = ba.selectn(4, chorusMode, 0, 1, 0, 0.7071);   // chorus I share
@@ -125,4 +125,33 @@ with {
   outR = x * dry + wR * wet;
 };
 
-effect = fi.highpass(2, hpfFreq) : chorus;
+//---------------------------------------------------------------------------
+// Output stage: gain, then a peak limiter.
+//
+// outGain is +12 dB makeup times the VCA level times the master volume (set by
+// synth.js). Big chords then go far over full scale, so the limiter must
+// catch every peak: anything over 1.0 clips in the sound card and crackles.
+// It looks ahead: the audio is delayed by 5 ms while the gain already falls,
+// so the gain is down before the peak arrives. Hold keeps it down for at
+// least that long; release lets it back up over about 200 ms.
+// Same idea as co.limiter_lad_N (Zoelzer / Zmoelnig), written out here to keep
+// this file on MIT / STK-4.3 library code.
+//---------------------------------------------------------------------------
+outGain  = hslider("outGain", 1, 0, 8, 0.001) : sm;
+ceiling  = 0.89;                                    // -1 dBFS
+LA       = 0.005;                                   // lookahead, seconds
+
+limiter(l, r) = dl * g, dr * g : clip, clip
+with {
+  n     = int(LA * ma.SR);
+  dl    = l @ n;
+  dr    = r @ n;
+  peak  = max(abs(l), abs(r)) : ba.peakholder(n + 1)
+        : si.smooth(ba.tau2pole(LA / 5))            // reaches 99 % within the lookahead
+        : release;
+  release(x) = x : (max ~ *(ba.tau2pole(0.2)));      // falls back with a 200 ms time constant
+  g     = ceiling / max(peak, ceiling);              // 1 below the ceiling
+  clip  = max(-1) : min(1);                          // last safety net, normally idle
+};
+
+effect = fi.highpass(2, hpfFreq) : chorus : *(outGain), *(outGain) : limiter;

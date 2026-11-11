@@ -1,0 +1,95 @@
+# Builds the VST3 plugin on Windows with the same installer users run,
+# stress-tests it with pluginval, checks that the plugin and the web version
+# agree, and on a version tag (v0.1.0 ...) publishes the zip as a GitHub release.
+name: Plugin
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A new push replaces a run still going on the same branch; release tags always finish
+concurrency:
+  group: plugin-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+jobs:
+  windows-build:
+    name: Windows build and pluginval
+    # Pinned: the installer builds with Visual Studio 2022
+    runs-on: windows-2022
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build with install.ps1 (build only, no install)
+        # Windows PowerShell 5.1, as install.cmd uses
+        shell: powershell
+        run: .\install.ps1 -BuildOnly -Yes
+      - name: Stress-test with pluginval (strictness 5)
+        shell: powershell
+        run: |
+          Invoke-WebRequest -UseBasicParsing -Uri https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_Windows.zip -OutFile pluginval.zip
+          Expand-Archive pluginval.zip -DestinationPath pluginval
+          $plugin = Resolve-Path 'build\Stable\Halden6_artefacts\Release\VST3\Halden 6.vst3'
+          # pluginval is a GUI program: PowerShell does not wait for it on its own
+          $pvArgs = @('--strictness-level', '5', '--validate-in-process', '--output-dir', 'build\pluginval', '--validate', "`"$plugin`"")
+          $p = Start-Process -FilePath .\pluginval\pluginval.exe -ArgumentList $pvArgs -NoNewWindow -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "pluginval found problems (exit code $($p.ExitCode))" }
+      - name: Keep the plugin zip
+        timeout-minutes: 5
+        uses: actions/upload-artifact@v4
+        with:
+          name: Halden6-vst3-windows
+          path: build/Halden6-vst3-*.zip
+          if-no-files-found: error
+      - name: Keep the pluginval report
+        if: always()
+        timeout-minutes: 5
+        uses: actions/upload-artifact@v4
+        with:
+          name: pluginval-report
+          path: build/pluginval
+          if-no-files-found: ignore
+
+  checks:
+    name: Plugin and web version agree
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Install the Faust build tools (for the web engine and the comparison)
+        working-directory: dsp
+        run: npm ci
+      - name: Generated files match panel.js, presets.js and arp-patterns.js
+        run: node plugin/tools/generate.mjs --check
+      - name: Mappings, sound and arpeggiator rules
+        run: node plugin/tools/check.mjs
+
+  release:
+    name: Publish the release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [windows-build, checks]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        timeout-minutes: 5
+        with:
+          name: Halden6-vst3-windows
+      - name: The tag must match the version in plugin/CMakeLists.txt
+        run: |
+          want="Halden6-vst3-${GITHUB_REF_NAME#v}.zip"
+          test -f "$want" || { echo "Tag $GITHUB_REF_NAME, but the build is $(ls Halden6-vst3-*.zip). Set the version in plugin/CMakeLists.txt."; exit 1; }
+      - name: Create the GitHub release with the zip
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" "Halden6-vst3-${GITHUB_REF_NAME#v}.zip" \
+            --repo "$GITHUB_REPOSITORY" --title "Halden 6 $GITHUB_REF_NAME" --generate-notes

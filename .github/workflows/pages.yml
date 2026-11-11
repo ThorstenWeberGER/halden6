@@ -1,0 +1,47 @@
+# Publishes the web version on GitHub Pages, so it opens on any device:
+#   https://thorstenweberger.github.io/halden6/
+# Served over HTTPS, the browser runs the sound engine on its own audio thread
+# (the low-latency path). Runs on every push to main, or by hand.
+#
+# One-time setup in the repository: Settings > Pages > Source: "GitHub Actions".
+name: Web version on GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Collect the files the web version needs
+        run: |
+          mkdir -p _site/fonts _site/vendor _site/dsp
+          cp index.html styles.css *.js LICENSE THIRD-PARTY.md _site/
+          cp fonts/* _site/fonts/
+          cp vendor/* _site/vendor/
+          cp dsp/halden6-dsp.js _site/dsp/
+          touch _site/.nojekyll
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        timeout-minutes: 5
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4
+        timeout-minutes: 5

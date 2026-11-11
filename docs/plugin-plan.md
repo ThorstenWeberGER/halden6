@@ -1,6 +1,12 @@
 # Plan: Halden 6 as an open-source VST3 plugin for Ableton Live
 
-Status: plan only, nothing built yet. Written 2026-11-10.
+Status (2026-11-11): all phases are built. Tested on Linux and built and
+pluginval-tested on Windows in GitHub Actions; not yet tried in Live. Open:
+the Live checklist below (on your machine), Steinberg's trademark rules for
+"VST" (their page was not reachable from the build machine), and the first
+release tag. See `plugin/README.md`.
+
+Written 2026-11-10.
 
 ## Goal
 
@@ -82,8 +88,8 @@ playing the same patch.
 - Define every panel control as a DAW parameter. Its ID is taken from
   `panel.js`, and a clear name is used for Live's automation list (for example "VCF Freq").
   **Parameter IDs never change after the first release**, otherwise old Live sets break.
-- Port the value mappings, the +12 dB output gain, the volume and the limiter
-  from `synth.js` to C++ (or into Faust).
+- Port the value mappings from `synth.js` to C++. The output gain and the limiter
+  already live in `halden6.dsp`, so the plugin gets them for free.
 - Mono and glide (ML, G-ML), velocity, pitch wheel from MIDI.
 - Save and restore the full patch in the Live set.
 
@@ -232,7 +238,11 @@ install or CI runs without questions (`-Yes` takes all defaults).
 ## Open questions
 
 - Which Live version will you test with (11 or 12)?
-- Does the WebView2 SDK licence allow static linking in an AGPL project? Check before phase 3.
+- ~~Does the WebView2 SDK licence allow static linking in an AGPL project?~~ The SDK's
+  licence text on nuget.org is the BSD 3-clause form: binaries may be redistributed if
+  its notice comes along. `install.ps1` copies it into the plugin bundle.
+- Should the plugin move to JUCE 9? It fixes the Linux web view bug the panel test
+  works around. Check its licence terms first.
 
 ## Sources
 
