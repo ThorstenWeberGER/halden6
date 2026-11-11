@@ -226,9 +226,32 @@ if ($Validate) {
 }
 
 if ($BuildOnly) {
+  # The release zip: the plugin, the licences, and where its source is (AGPL)
+  $Stage = Join-Path $Root 'build\release'
+  if (Test-Path $Stage) { Remove-Item $Stage -Recurse -Force }
+  New-Item -ItemType Directory -Force -Path $Stage | Out-Null
+  Copy-Item $Built -Destination $Stage -Recurse
+  Copy-Item (Join-Path $Src 'LICENSE') (Join-Path $Stage 'LICENSE.txt')
+  Copy-Item (Join-Path $Src 'THIRD-PARTY.md') $Stage
+  $Url = ((git -C $Src remote get-url origin) -replace '\.git$', '' -replace '//[^/@]+@', '//').Trim()
+  @(
+    "$PluginName $Version, VST3 instrument for Ableton Live on Windows (64-bit)",
+    '',
+    'Install',
+    "  1. Close Ableton Live.",
+    "  2. Copy the folder '$PluginName.vst3' to C:\Program Files\Common Files\VST3",
+    "  3. In Live: Settings > Plug-Ins, turn on 'Use VST3 Plug-In System Folders', then Rescan.",
+    "  4. Find $PluginName under Plug-Ins > Halden and drop it on a MIDI track.",
+    '',
+    'Needs the Microsoft Edge WebView2 Runtime for its window (part of Windows 11).',
+    '',
+    "Source code: $Url (commit $Commit)",
+    'Licence: GNU AGPL 3.0, see LICENSE.txt. Third-party parts: THIRD-PARTY.md.',
+    'VST is a trademark of Steinberg Media Technologies GmbH.'
+  ) | Set-Content -Path (Join-Path $Stage 'README.txt') -Encoding UTF8
   $Zip = Join-Path $Root "build\Halden6-vst3-$Version.zip"
   if (Test-Path $Zip) { Remove-Item $Zip }
-  Compress-Archive -Path $Built -DestinationPath $Zip
+  Compress-Archive -Path (Join-Path $Stage '*') -DestinationPath $Zip
   Say "Wrote $Zip"
   exit 0
 }

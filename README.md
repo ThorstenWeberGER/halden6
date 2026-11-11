@@ -137,15 +137,30 @@ them on the clipboard to paste straight into the chat.
 
 Plain HTML, CSS and JavaScript with no build step.
 
-## VST3 plugin for Ableton Live (in progress)
+## Halden 6 in Ableton Live (VST3 plugin, Windows)
 
-Halden 6 is becoming an open-source VST3 instrument for Ableton Live on
-Windows, built with JUCE from the same Faust sound engine. It plays, records
-automation, saves its patch in the Live set, lists the 100 presets in Live's
-preset menu, runs the arpeggiator in step with Live, and shows this panel in a
-window you can resize freely. To try it, double-click `install.cmd` in a clone
-of this repository. See [plugin/README.md](plugin/README.md) and
-[docs/plugin-plan.md](docs/plugin-plan.md).
+The same synth as a VST3 instrument for Ableton Live on Windows: this panel in
+a window you can resize freely, every control automatable, the patch saved in
+the Live set, the 100 presets in Live's preset menu, and the arpeggiator in
+step with Live (it follows loops and tempo, and export and freeze play exactly
+what you heard). The window needs the Microsoft Edge WebView2 Runtime, which
+Windows 11 includes.
+
+Two ways to install it:
+
+- **The release zip** (no build tools needed): download `Halden6-vst3-<version>.zip`
+  from the GitHub releases, close Live, and copy the `Halden 6.vst3` folder from
+  it to `C:\Program Files\Common Files\VST3`.
+- **From this repository**: double-click `install.cmd`. It checks for Git,
+  CMake and the Visual Studio 2022 C++ tools (and offers to install them),
+  builds the plugin and copies it to your VST3 folder.
+  `install.ps1 -Uninstall` removes it again.
+
+Then in Live: Settings > Plug-Ins, turn on "Use VST3 Plug-In System Folders",
+click Rescan, and drop Halden 6 (under Plug-Ins > Halden) on a MIDI track.
+
+How the plugin is built and tested: [plugin/README.md](plugin/README.md). The
+plan behind it: [docs/plugin-plan.md](docs/plugin-plan.md).
 
 ### Refresh the README images
 

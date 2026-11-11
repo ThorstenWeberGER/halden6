@@ -1,9 +1,11 @@
 # Plan: Halden 6 as an open-source VST3 plugin for Ableton Live
 
-Status (2026-11-11): phases 0 to 5 are built and tested on Linux; the Windows
-build runs in GitHub Actions on every push. Not yet tried in Live. Next: run
-`install.cmd` on Windows and work through the Live checklist below, then
-phase 6. See `plugin/README.md`.
+Status (2026-11-11): all phases are built. Tested on Linux and built and
+pluginval-tested on Windows in GitHub Actions; not yet tried in Live. Open:
+the Live checklist below (on your machine), Steinberg's trademark rules for
+"VST" (their page was not reachable from the build machine), and the first
+release tag. See `plugin/README.md`.
+
 Written 2026-11-10.
 
 ## Goal

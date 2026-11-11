@@ -37,11 +37,19 @@ not per Live set.
 
 ## Install
 
-From a clone of this repository, double-click `install.cmd` in the repository
-root. It checks for Git, CMake and the Visual Studio 2022 C++ tools (and offers
-to install them with winget), builds the plugin and copies it to your VST3
-folder. Then in Live: Settings > Plug-Ins, turn on the VST3 system folder,
-Rescan.
+See the install section of the main [README](../README.md#halden-6-in-ableton-live-vst3-plugin-windows).
+
+## Releasing
+
+1. Set the version in `CMakeLists.txt` (`project(Halden6 VERSION x.y.z)`).
+2. Commit, then tag and push: `git tag vx.y.z && git push origin vx.y.z`.
+3. GitHub Actions builds on Windows, runs pluginval and the checks, and
+   publishes `Halden6-vst3-x.y.z.zip` as a GitHub release. The zip holds the
+   plugin, `LICENSE.txt`, `THIRD-PARTY.md` and a `README.txt` with the install
+   steps and the source link the AGPL asks for.
+
+Every push also builds the zip (kept with the Actions run) and runs pluginval
+at strictness level 5.
 
 ## What is in here
 
