@@ -1,8 +1,9 @@
 # Plan: Halden 6 as an open-source VST3 plugin for Ableton Live
 
-Status (2026-11-11): phases 0, 1 and 2 are built and tested on Linux, not yet
-in Live on Windows. Next: run `install.cmd` on Windows and work through the
-"Done when" checks of phases 1 and 2 in Live. Then phase 3. See `plugin/README.md`.
+Status (2026-11-11): phases 0 to 3 are built and tested on Linux, not yet in
+Live on Windows. Next: run `install.cmd` on Windows and work through the
+"Done when" checks of phases 1 to 3 in Live, then decide on phase 4. See
+`plugin/README.md`.
 Written 2026-11-10.
 
 ## Goal
@@ -235,7 +236,11 @@ install or CI runs without questions (`-Yes` takes all defaults).
 ## Open questions
 
 - Which Live version will you test with (11 or 12)?
-- Does the WebView2 SDK licence allow static linking in an AGPL project? Check before phase 3.
+- ~~Does the WebView2 SDK licence allow static linking in an AGPL project?~~ The SDK's
+  licence text on nuget.org is the BSD 3-clause form: binaries may be redistributed if
+  its notice comes along. `install.ps1` copies it into the plugin bundle.
+- Should the plugin move to JUCE 9? It fixes the Linux web view bug the panel test
+  works around. Check its licence terms first.
 
 ## Sources
 

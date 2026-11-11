@@ -6,16 +6,15 @@
 // The same Faust program holds the effect after the voices: HPF, a Juno-60
 // chorus ported from junologue-chorus (MIT, Peter Allwin), then the output
 // stage: makeup gain x VCA level x volume, and a peak limiter. Then speakers.
-// This file owns the mapping from fader positions to real units (Hz, seconds,
-// cents); the same functions feed the DSP and the graphs in viz.js.
+// Fader positions become real units (Hz, seconds, cents) in mapping.js; the
+// same functions feed the DSP and the graphs in viz.js.
 
 (function () {
   const P = {}; // current parameter values, keyed by control id
   window.PANEL.forEach(s => s.controls.forEach(c => { if ('value' in c) P[c.id] = c.value; }));
 
-  const TEMPO_BEATS = [0, 4, 2, 1, 0.5, 0.25]; // '----', 1/1, 1/2, 1/4, 1/8, 1/16
   const MAX_VOICES = 6;
-  const OUT_MAKEUP = 5.1; // +14 dB: the old +12 dB plus the ~2 dB the browser compressor used to add
+  const M = window.HaldenMapping(P);
 
   let ctx = null;
   const g = {};          // global nodes
@@ -26,47 +25,11 @@
   let held = [];         // note stack for mono modes
   let engineMode = '';   // 'AudioWorklet' or 'ScriptProcessor'
 
-  // ---------- value mapping ----------
-  const expMap = (v, min, max) => min * Math.pow(max / min, v);
-  const attack = () => expMap(P.envA, 0.001, 3);
-  const decay = () => expMap(P.envD, 0.005, 10);
-  const release = () => expMap(P.envR, 0.005, 10);
-  const cutoff = () => expMap(P.vcfFreq, 30, 18000);
-  const hpfHz = () => expMap(P.hpfFreq, 10, 1500);
   const isMono = () => !!(P.ml || P.gml);
-  const lfoRateHz = () => P.lfoTempo > 0
-    ? ((P.bpm || 120) / 60) / TEMPO_BEATS[P.lfoTempo]
-    : expMap(P.lfoRate, 0.1, 20);
-  const ladderQ = () => 0.707 + P.vcfRes * P.vcfRes * 22;
-
-  // Faust control values, in the units halden6.dsp expects
-  function dspValues() {
-    return {
-      pitchCents: P.tune * 100 + P.pitchWheel * P.bendDco * 1200,
-      glide: P.gml ? 0.08 : 0,
-      sawOn: P.dcoSaw, pulseOn: P.dcoPulse, subOn: P.dcoSub,
-      subLevel: P.dcoSubLevel, noiseLevel: P.dcoNoise,
-      pwmAmt: P.dcoPwm * 0.45,
-      pwmMode: P.dcoPwmMod === 1 ? 0 : (P.dcoPwmSource === 0 ? 1 : 2),
-      lfoRate: lfoRateHz(), lfoWave: P.lfoWave, lfoDelay: P.lfoDelay * 3,
-      lfoRetrig: P.lfoTrig === 0 ? 1 : 0, lfoPitch: P.dcoLfo * P.dcoLfo * 600,
-      cutoff: cutoff(), res: P.vcfRes,
-      envAmt: (P.vcfEnvPolarity === 0 ? 1 : -1) * P.vcfEnv * 7200,
-      lfoFilt: P.vcfLfo * P.vcfLfo * 4800, kybd: P.vcfKybd,
-      bendVcf: P.pitchWheel * P.bendVcf * 4800,
-      attack: attack(), decay: decay(), sustain: P.envS, release: release(),
-      vcaGate: P.vcaMode, velEnv: P.velocityEnv,
-      hpf: hpfHz(),
-      chorusMode: P.chorus1 && P.chorus2 ? 3 : P.chorus2 ? 2 : P.chorus1 ? 1 : 0,
-      // +14 dB makeup (one note peaks around -24 dBFS, too quiet), VCA level and
-      // volume. Chords go over full scale; the limiter in halden6.dsp catches them.
-      outGain: OUT_MAKEUP * P.vcaLevel * 1.2 * P.volume * P.volume,
-    };
-  }
 
   function pushDsp() {
     if (!faust) return;
-    const vals = dspValues();
+    const vals = M.dspValues();
     for (const k in vals) {
       if (sent[k] !== vals[k]) { faust.setParamValue('/halden6/' + k, vals[k]); sent[k] = vals[k]; }
     }
@@ -180,41 +143,15 @@
     pushDsp();
   }
 
-  // Readout text for a control value, in real units where it helps
-  function format(id, v) {
-    const hz = x => x >= 1000 ? (x / 1000).toFixed(1) + ' kHz' : x.toFixed(x < 10 ? 2 : 0) + ' Hz';
-    const sec = x => x < 1 ? Math.round(x * 1000) + ' ms' : x.toFixed(2) + ' s';
-    switch (id) {
-      case 'lfoRate': return P.lfoTempo > 0 ? 'tempo sync' : hz(expMap(v, 0.1, 20));
-      case 'lfoDelay': return sec(v * 3);
-      case 'envA': return sec(expMap(v, 0.001, 3));
-      case 'envD': case 'envR': return sec(expMap(v, 0.005, 10));
-      case 'envS': return Math.round(v * 100) + ' %';
-      case 'vcfFreq': return hz(expMap(v, 30, 18000));
-      case 'hpfFreq': return hz(expMap(v, 10, 1500));
-      case 'tune': return (v >= 0 ? '+' : '') + Math.round(v * 100) + ' ct';
-      case 'bendDco': return (v * 12).toFixed(1) + ' st';
-      case 'pitchWheel': return (v >= 0 ? '+' : '') + v.toFixed(2);
-      case 'arpGate': return Math.round(5 + v * 95) + ' %';
-      case 'arpSwing': return Math.round(v * 100) + ' %';
-      default: return (v * 10).toFixed(1);
-    }
-  }
-
   window.Synth = {
-    start, noteOn, noteOff, trigger, panic, setParam, format, params: P,
+    start, noteOn, noteOff, trigger, panic, setParam, format: M.format, params: P,
     now: () => (ctx ? ctx.currentTime : 0),
     analyser: () => g.analyser || null,
     // Value mappings, shared with the graphs so they show what you hear
-    map: {
-      attack, decay, release, cutoff, hpfHz, lfoRateHz,
-      pulseWidth: () => (P.dcoPwmMod === 0 ? 0.5 : 0.5 - P.dcoPwm * 0.45),
-      // ladder resonance expressed as a biquad Q (dB) for the filter graph
-      resQ: () => 20 * Math.log10(ladderQ()),
-    },
+    map: M.map,
     // Faust control values for the current panel; plugin/tools/check.mjs
     // compares them with the plugin's C++ copy
-    dspValues,
+    dspValues: M.dspValues,
     state: () => (ctx ? (faust && ctx.currentTime > 0 ? ctx.state : 'loading') : 'off'),
     engine: () => engineMode,
   };

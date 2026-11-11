@@ -126,6 +126,18 @@ if ($missing.Count -gt 0) {
 }
 Say 'Git, CMake and Visual Studio 2022 C++ tools found.'
 
+# The plugin window is a web page shown by Microsoft's WebView2 runtime. Windows
+# 11 ships it, most Windows 10 machines have it through Edge.
+$wv2Key = 'SOFTWARE\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}'
+$wv2 = @("HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}", "HKLM:\$wv2Key", "HKCU:\$wv2Key") |
+  Where-Object { (Test-Path $_) -and (Get-ItemProperty $_ -ErrorAction SilentlyContinue).pv -notin @($null, '', '0.0.0.0') }
+if (-not $wv2 -and -not $BuildOnly) {
+  Say 'Missing: Microsoft Edge WebView2 Runtime (the plugin window needs it)'
+  if ((Ask 'Install it with winget?' @('Yes', 'No, continue without (the window will stay empty)')) -eq 0) {
+    winget install --id Microsoft.EdgeWebView2Runtime -e --accept-package-agreements --accept-source-agreements
+  }
+}
+
 # ---------------------------------------------------------------- 2. questions
 
 if (-not $PSBoundParameters.ContainsKey('Ref')) {
@@ -168,15 +180,35 @@ $Commit = (git -C $Src rev-parse --short HEAD).Trim()
 $Version = ((Select-String -Path (Join-Path $Src 'plugin\CMakeLists.txt') -Pattern 'project\(Halden6 VERSION ([\d.]+)').Matches[0].Groups[1].Value)
 Say "Building $PluginName $Version ($Commit)"
 
+# The WebView2 SDK (headers and the static loader library) for the build
+$Wv2Version = '1.0.4314.35'
+$Packages = Join-Path $Root 'build\packages'
+$Wv2Dir = Join-Path $Packages "Microsoft.Web.WebView2.$Wv2Version"
+if (-not (Test-Path (Join-Path $Wv2Dir 'build\native\include\WebView2.h'))) {
+  Say "Downloading the WebView2 SDK $Wv2Version from nuget.org"
+  New-Item -ItemType Directory -Force -Path $Packages | Out-Null
+  $nupkg = Join-Path $Packages "Microsoft.Web.WebView2.$Wv2Version.zip"
+  Invoke-WebRequest -UseBasicParsing -Uri "https://www.nuget.org/api/v2/package/Microsoft.Web.WebView2/$Wv2Version" -OutFile $nupkg
+  Expand-Archive -Path $nupkg -DestinationPath $Wv2Dir -Force
+  Remove-Item $nupkg
+}
+
 # ---------------------------------------------------------------- 4. build
 Step 'Building (the first build takes a few minutes)'
 $Build = Join-Path $Root "build\$Channel"
-cmake -S (Join-Path $Src 'plugin') -B $Build -G 'Visual Studio 17 2022' -A x64 "-DHALDEN6_CHANNEL=$Channel"
+cmake -S (Join-Path $Src 'plugin') -B $Build -G 'Visual Studio 17 2022' -A x64 "-DHALDEN6_CHANNEL=$Channel" "-DJUCE_WEBVIEW2_PACKAGE_LOCATION=$Packages"
 if ($LASTEXITCODE -ne 0) { Fail 'CMake could not configure the build' }
 cmake --build $Build --config Release --target Halden6_VST3 --parallel
 if ($LASTEXITCODE -ne 0) { Fail 'the build failed' }
 $Built = Join-Path $Build "Halden6_artefacts\Release\VST3\$PluginName.vst3"
 if (-not (Test-Path $Built)) { Fail "build finished, but $Built is missing" }
+# The WebView2 loader is linked into the plugin; its licence asks for its notice to travel with it
+$Wv2Licence = Get-ChildItem -Path $Wv2Dir -Filter 'LICENSE*' -File -ErrorAction SilentlyContinue | Select-Object -First 1
+if ($Wv2Licence) {
+  $res = Join-Path $Built 'Contents\Resources'
+  New-Item -ItemType Directory -Force -Path $res | Out-Null
+  Copy-Item $Wv2Licence.FullName (Join-Path $res 'WebView2-SDK-LICENSE.txt') -Force
+}
 Say "Built $Built"
 
 # ---------------------------------------------------------------- 5. validate

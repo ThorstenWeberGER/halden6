@@ -1,4 +1,5 @@
 #include "PluginProcessor.h"
+#include "PluginEditor.h"
 
 using namespace halden6;
 
@@ -57,6 +58,7 @@ void Halden6Processor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     pushPanel();
     engine.prepare ((int) std::lround (sampleRate), juce::jmax (samplesPerBlock, 32));
+    panelMidi.ensureSize (256);
     setLatencySamples ((int) (0.005 * sampleRate));   // the limiter's 5 ms lookahead
 }
 
@@ -95,7 +97,18 @@ void Halden6Processor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mid
         if (auto pos = head->getPosition())
             if (auto bpm = pos->getBpm())
                 perf.bpm = *bpm;
+    bpmForPanel = perf.bpm;
+    if (panelWheelPending.exchange (false))
+        perf.pitchWheel = panelWheel.load();
     pushPanel();
+
+    // Notes from the panel's keys join the host's MIDI
+    // (try-lock: the audio thread never waits; busy now means next block)
+    if (const juce::SpinLock::ScopedTryLockType lock (panelMidiLock); lock.isLocked() && ! panelMidi.isEmpty())
+    {
+        midi.addEvents (panelMidi, 0, -1, 0);
+        panelMidi.clear();
+    }
 
     // Render up to each MIDI event, so notes start on the exact sample
     auto* left = buffer.getWritePointer (0);
@@ -114,12 +127,28 @@ void Halden6Processor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mid
     }
     if (pos < numSamples)
         engine.render (left + pos, right + pos, numSamples - pos);
+
+    // Keep the last few thousand samples for the panel's live scope
+    int w = scopeWrite.load (std::memory_order_relaxed);
+    for (int i = 0; i < numSamples; ++i)
+    {
+        scopeRing[(size_t) w].store (0.5f * (left[i] + right[i]), std::memory_order_relaxed);
+        w = (w + 1) % kScopeRing;
+    }
+    scopeWrite.store (w, std::memory_order_release);
+}
+
+void Halden6Processor::copyScope (float* dest, int n) const
+{
+    n = juce::jmin (n, kScopeRing);
+    const int end = scopeWrite.load (std::memory_order_acquire);
+    for (int i = 0; i < n; ++i)
+        dest[i] = scopeRing[(size_t) ((end - n + i + kScopeRing) % kScopeRing)].load (std::memory_order_relaxed);
 }
 
 juce::AudioProcessorEditor* Halden6Processor::createEditor()
 {
-    // Phase 1-2: JUCE's generic parameter window. The Halden 6 panel follows in phase 3.
-    return new juce::GenericAudioProcessorEditor (*this);
+    return new Halden6Editor (*this);
 }
 
 void Halden6Processor::getStateInformation (juce::MemoryBlock& destData)

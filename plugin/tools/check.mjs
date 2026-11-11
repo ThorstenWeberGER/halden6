@@ -33,6 +33,7 @@ const tool = (args, input) => execFileSync(exe, args, { input, maxBuffer: 1 << 2
 const web = { window: {} };
 web.window.window = web.window;
 vm.runInNewContext(fs.readFileSync(path.join(root, 'panel.js'), 'utf8'), web);
+vm.runInNewContext(fs.readFileSync(path.join(root, 'mapping.js'), 'utf8'), web);
 vm.runInNewContext(fs.readFileSync(path.join(root, 'synth.js'), 'utf8'), web);
 const Synth = web.window.Synth;
 

@@ -1,5 +1,5 @@
 // Fader positions to the real units halden6.dsp expects (Hz, seconds, cents).
-// A C++ copy of dspValues() in synth.js. Keep the two in step:
+// A C++ copy of dspValues() in mapping.js. Keep the two in step:
 // plugin/tools/check.mjs compares them on random panel settings.
 #pragma once
 

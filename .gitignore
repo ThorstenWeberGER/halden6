@@ -2,3 +2,4 @@
 reference/
 plugin/tools/build/
 build/
+build-*/

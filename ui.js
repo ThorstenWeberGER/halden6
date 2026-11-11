@@ -30,7 +30,8 @@
   window.PANEL.forEach(s => s.controls.forEach(c => {
     if ('value' in c) {
       defaults[c.id] = c.value;
-      if (c.type !== 'wheel' && saved[c.id] != null) S.params[c.id] = saved[c.id];
+      // In the plugin the patch belongs to the Live set, not to this browser
+      if (!S.isPlugin && c.type !== 'wheel' && saved[c.id] != null) S.params[c.id] = saved[c.id];
     }
   }));
 
@@ -48,6 +49,7 @@
     if (window.Viz) Viz.update();
     if (!presetLoading && PRESET_IDS.has(id) && currentPreset && !presetEdited) { presetEdited = true; renderPresetBar(); }
     if (id === 'lfoTempo' && controlIndex.lfoRate) controlIndex.lfoRate.render();
+    if (S.isPlugin) return;
     clearTimeout(savePatchTimer);
     savePatchTimer = setTimeout(() => {
       const patch = {};
@@ -362,7 +364,7 @@
   window.PANEL.forEach(s => { controlIndex[s.id] = { def: { label: s.title }, section: null, render() {} }; });
 
   // Push saved values into the engine (it starts at panel defaults)
-  Object.keys(defaults).forEach(id => S.setParam(id, S.params[id]));
+  if (!S.isPlugin) Object.keys(defaults).forEach(id => S.setParam(id, S.params[id]));
 
   // ---------- keyboard ----------
   const kb = $('#keyboard');
@@ -427,7 +429,7 @@
     arpToggle.setAttribute('aria-expanded', open);
     store.set('halden6-arp-open-v1', open);
   }
-  arpToggle.addEventListener('click', () => { if (!commentMode) openArp(!arpPanel.classList.contains('open')); });
+  arpToggle.addEventListener('click', () => { if (!commentMode && !S.isPlugin) openArp(!arpPanel.classList.contains('open')); });
   function setArpHandle(text, lit, rec) {
     // queried here because Arp.init() calls this before the consts below exist
     const handle = $('#arp-toggle');
@@ -483,7 +485,8 @@
   new ResizeObserver(() => buildKeyboard()).observe(kb);
 
   // ---------- presets ----------
-  const savedPreset = store.get('halden6-preset-v1', null);
+  // The plugin does not keep the preset name per Live set yet (phase 5)
+  const savedPreset = S.isPlugin ? null : store.get('halden6-preset-v1', null);
   currentPreset = savedPreset ? window.PRESETS.find(p => p.num === savedPreset.num) || null : null;
   presetEdited = !!(savedPreset && savedPreset.edited);
   let presetCat = 'All', presetQuery = '';
@@ -760,9 +763,39 @@
   notesReady = true;
   renderNotes();
   updateAudioStatus();
-  openArp(store.get('halden6-arp-open-v1', false));
+  if (!S.isPlugin) openArp(store.get('halden6-arp-open-v1', false));
   // live scope in the arpeggiator bar
   $('#arp-toggle').insertBefore(Viz.create('scope', ''), $('#arp-toggle .arp-chevron'));
   Viz.init();
   Arp.updateHandle();
+
+  // ---------- inside the plugin ----------
+  if (S.isPlugin) {
+    // The arpeggiator needs a clock that follows Live (phase 4); until then
+    // its bar only shows the scope
+    setArpHandle('In a later version', false);
+
+    // Live changed a parameter (automation, undo, a loaded set): show it
+    window.addEventListener('halden6-param', e => {
+      const id = e.detail.id;
+      if (controlIndex[id]) controlIndex[id].render();
+      if (id === 'lfoTempo' && controlIndex.lfoRate) controlIndex.lfoRate.render();
+      if (window.Viz) Viz.update();
+      if (!presetLoading && PRESET_IDS.has(id) && currentPreset && !presetEdited) { presetEdited = true; renderPresetBar(); }
+    });
+
+    // A drag is one gesture for Live, so it records automation and undoes as
+    // one step. Clicks without a drag are sent as single changes.
+    let gestureId = null;
+    const endGesture = () => { if (gestureId) { S.endGesture(gestureId); gestureId = null; } };
+    document.addEventListener('pointerdown', e => {
+      const node = e.target.closest('[data-cid]');
+      if (commentMode || !node || !(node.dataset.cid in S.params)) return;
+      endGesture();
+      gestureId = node.dataset.cid;
+      S.beginGesture(gestureId);
+    }, true);
+    window.addEventListener('pointerup', endGesture, true);
+    window.addEventListener('pointercancel', endGesture, true);
+  }
 })();

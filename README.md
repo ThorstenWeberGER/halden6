@@ -119,7 +119,8 @@ them on the clipboard to paste straight into the chat.
 | File | What it holds |
 |---|---|
 | `panel.js` | Every section and control. Add or move a control here. |
-| `synth.js` | Connects the UI to the sound engine and maps fader positions to real units. |
+| `synth.js` | Connects the UI to the browser sound engine. |
+| `mapping.js` | Fader positions to real units and readout text, shared with the plugin. |
 | `presets.js` | The 100 factory presets. |
 | `dsp/` | The synth voice, HPF and Juno-60 chorus in Faust, compiled to WebAssembly. See `dsp/README.md`. |
 | `vendor/` | faustwasm browser runtime (LGPL-2.1) and the junologue-chorus licence (MIT). |
@@ -138,9 +139,9 @@ Plain HTML, CSS and JavaScript with no build step.
 ## VST3 plugin for Ableton Live (in progress)
 
 Halden 6 is becoming an open-source VST3 instrument for Ableton Live on
-Windows, built with JUCE from the same Faust sound engine. It already plays,
-records automation and saves its patch in the Live set; the Halden 6 panel
-inside the plugin comes next. To try it, double-click `install.cmd` in a clone
+Windows, built with JUCE from the same Faust sound engine. It plays, records
+automation, saves its patch in the Live set and shows this panel in a window
+you can resize freely; the arpeggiator comes next. To try it, double-click `install.cmd` in a clone
 of this repository. See [plugin/README.md](plugin/README.md) and
 [docs/plugin-plan.md](docs/plugin-plan.md).
 

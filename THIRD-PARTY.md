@@ -26,7 +26,7 @@ function, which is GPL-3.0-only.
 | JUCE 8.0.9 | `plugin/JUCE` (git submodule) | AGPLv3 (or commercial) | The reason the whole repository is AGPL-3.0. |
 | VST 3 SDK | Inside JUCE | MIT since version 3.8 | |
 | Faust standard libraries | Compiled into `plugin/Source/generated/` | MIT and STK-4.3 | Same libraries as the web version. |
-| Microsoft WebView2 SDK | Not used yet | To be checked before phase 3 | See the open question in `docs/plugin-plan.md`. |
+| Microsoft WebView2 SDK 1.0.4314.35 | Loader linked statically into the Windows plugin; downloaded by `install.ps1` | BSD-style (3-clause text on nuget.org) | Its notice must travel with binaries: `install.ps1` copies the package's licence file into the plugin bundle. |
 
 faustwasm is used by the web version only. The plugin compiles the same Faust
 source to C++ instead.
