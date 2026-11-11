@@ -180,7 +180,7 @@ Windows build and pluginval.
 | `ui.js` | Rendering, input, keyboard, comment mode. |
 | `styles.css` | Look, layout and skins. |
 | `fonts/` | Bundled font files and their licences. |
-| `docs/` | README images, the script that renders them, the plugin plan, and the next-steps checklist. |
+| `docs/` | README images, the script that renders them, the plugin plan, the next-steps checklist, and a guideline for building another plugin this way. |
 | `plugin/` | The VST3 plugin (JUCE, C++). See `plugin/README.md`. |
 | `install.cmd`, `install.ps1` | Build and install the plugin on Windows. |
 
