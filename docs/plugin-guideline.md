@@ -164,8 +164,10 @@ in atomics, written to the ValueTree only in `getStateInformation`.
 - `MidiMessageCollector` lives in `juce_audio_devices` (pulls in ALSA on
   Linux). For panel notes use a `MidiBuffer` behind a `SpinLock`, with a
   try-lock on the audio thread.
-- The VST3 wrapper adds about 2,080 hidden "MIDI CC" parameters (128 controllers plus aftertouch and pitch bend, per MIDI channel) (that is how VST3
-  delivers pitch bend), plus "Bypass" and, with programs, "Program". Filter
+- The VST3 wrapper adds about 2,080 hidden "MIDI CC" parameters: 128
+  controllers plus aftertouch and pitch bend, for each of 16 MIDI channels.
+  That is how VST3 delivers pitch bend. It also adds "Bypass" and, with
+  programs, "Program". Filter
   them out in tests, and never copy "Program" when cloning parameter values,
   or it loads a preset over them.
 - `JUCE_DISPLAY_SPLASH_SCREEN` is ignored in JUCE 8 (warning only); drop it.
