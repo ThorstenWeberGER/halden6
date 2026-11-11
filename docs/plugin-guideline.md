@@ -226,6 +226,10 @@ in atomics, written to the ValueTree only in `getStateInformation`.
   `actions/upload-artifact@v7` hung for over 15 minutes uploading the plugin
   zip, while `@v4` uploaded it in seconds. Change one action at a time and
   watch the next run.
+- Give network steps (artifact upload/download) their own `timeout-minutes`,
+  and use a `concurrency` group with `cancel-in-progress` for branch pushes.
+  Otherwise hung runs pile up, hold the Windows runners, and new runs sit in
+  the queue.
 
 ### 5.6 Agent environment (sandboxed cloud session)
 - Running downloaded binaries may be blocked; building from source with the
