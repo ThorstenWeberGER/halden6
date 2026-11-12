@@ -222,6 +222,21 @@ main {
 .module-rows .ctl-group { justify-content: center; gap: 1.2rem; }
 .module-nowrap .module-body { flex-wrap: nowrap; }
 
+/* ---------- MIDI (midi.js) ---------- */
+#btn-midi[hidden] { display: none; }
+#btn-midi .midi-state { font-family: var(--font-data); font-size: 0.7em; color: var(--ink-dim); margin-left: 0.3em; }
+#btn-midi.on .tb-dot { background: var(--green, #5fd38d); box-shadow: 0 0 8px var(--green, #5fd38d); }
+#btn-midi[aria-pressed="true"] { border-color: var(--accent, #4a8fd4); color: var(--ink); }
+.midi-learning .ctl-slider, .midi-learning .ctl-knob { outline: 1px dashed var(--ink-dim); outline-offset: 2px; cursor: pointer; }
+.midi-learning .midi-target { outline: 2px solid var(--blue); animation: midi-pulse 1s ease-in-out infinite; }
+@keyframes midi-pulse { 50% { outline-color: transparent; } }
+.midi-badge {
+  display: none; position: absolute; top: -0.3rem; right: -0.3rem; z-index: 2;
+  font-family: var(--font-data); font-size: 0.6rem; padding: 0.05rem 0.3rem; border-radius: 4px;
+  background: var(--blue); color: #fff; white-space: nowrap; pointer-events: none;
+}
+.midi-learning .midi-badge { display: block; }
+
 /* ---------- fader ---------- */
 .fader { position: relative; width: 3rem; height: var(--fader-h); cursor: ns-resize; touch-action: none; --cap: 1.15rem; }
 .fader-nums {

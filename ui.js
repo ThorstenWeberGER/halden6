@@ -784,6 +784,9 @@
   Viz.init();
   Arp.updateHandle();
 
+  // For midi.js: play notes like the on-screen keys, move controls
+  window.UI = { keyDown: play, keyUp: stop, setValue, control: id => controlIndex[id], toast };
+
   // ---------- inside the plugin ----------
   if (S.isPlugin) {
     // Live changed a parameter (automation, undo, a loaded set): show it
