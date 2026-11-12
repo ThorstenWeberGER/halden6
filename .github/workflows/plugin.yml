@@ -1,12 +1,20 @@
 # Builds the VST3 plugin on Windows with the same installer users run,
 # stress-tests it with pluginval, checks that the plugin and the web version
-# agree, and on a version tag (v0.1.0 ...) publishes the zip as a GitHub release.
+# agree, and on a version tag (v0.1.0 ...) or a manual run with a version
+# publishes the zip as a GitHub release.
 name: Plugin
 
 on:
   push:
   pull_request:
+  # By hand (Actions > Plugin > Run workflow): with a version such as 0.1.0,
+  # the run also creates the tag v0.1.0 and publishes the release
   workflow_dispatch:
+    inputs:
+      release:
+        description: 'Version to release, e.g. 0.1.0 (empty: just build and test)'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -73,7 +81,7 @@ jobs:
 
   release:
     name: Publish the release
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.release != '')
     needs: [windows-build, checks]
     runs-on: ubuntu-24.04
     permissions:
@@ -83,13 +91,24 @@ jobs:
         timeout-minutes: 5
         with:
           name: Halden6-vst3-windows
-      - name: The tag must match the version in plugin/CMakeLists.txt
+      - name: The version must match plugin/CMakeLists.txt
+        env:
+          INPUT_VERSION: ${{ inputs.release }}
         run: |
-          want="Halden6-vst3-${GITHUB_REF_NAME#v}.zip"
-          test -f "$want" || { echo "Tag $GITHUB_REF_NAME, but the build is $(ls Halden6-vst3-*.zip). Set the version in plugin/CMakeLists.txt."; exit 1; }
-      - name: Create the GitHub release with the zip
+          if [ -n "$INPUT_VERSION" ]; then version="${INPUT_VERSION#v}"; else version="${GITHUB_REF_NAME#v}"; fi
+          test -f "Halden6-vst3-$version.zip" || { echo "Version $version, but the build is $(ls Halden6-vst3-*.zip). Set the version in plugin/CMakeLists.txt."; exit 1; }
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+      - name: Publish the GitHub release with the zip
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" "Halden6-vst3-${GITHUB_REF_NAME#v}.zip" \
-            --repo "$GITHUB_REPOSITORY" --title "Halden 6 $GITHUB_REF_NAME" --generate-notes
+          tag="v$VERSION"
+          zip="Halden6-vst3-$VERSION.zip"
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            # a release made by hand on github.com: attach the zip to it
+            gh release upload "$tag" "$zip" --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            # creates the tag on the commit that was built
+            gh release create "$tag" "$zip" --target "$GITHUB_SHA" \
+              --repo "$GITHUB_REPOSITORY" --title "Halden 6 $tag" --generate-notes
+          fi
