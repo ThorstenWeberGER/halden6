@@ -173,7 +173,7 @@ int main (int argc, char** argv)
     int own = 0;
     for (auto* q : p->getParameters())
         own += isSoundParam (q) ? 1 : 0;
-    check (own == 45, "it has 45 parameters (" + juce::String (own) + "; JUCE adds Bypass, Program and hidden MIDI controller slots)");
+    check (own == 49, "it has 49 parameters (" + juce::String (own) + "; JUCE adds Bypass, Program and hidden MIDI controller slots)");
     check (param (*p, "VCF Freq") != nullptr && param (*p, "ENV R") != nullptr, "parameters carry readable names (VCF Freq, ENV R)");
     check (p->getLatencySamples() == 240, "it reports the limiter's 5 ms lookahead as latency (" + juce::String (p->getLatencySamples()) + " frames)");
 

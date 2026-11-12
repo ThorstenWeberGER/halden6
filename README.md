@@ -82,6 +82,20 @@ Switch **On**, then choose a mode:
 
 ![The open arpeggiator in Pattern mode with the factory pattern "Italo Octaves" at 118 BPM: Arp, Clock and Arp Mode sections on top, and the 16-step editor with note, velocity, gate and tie per step](docs/images/arpeggiator.png)
 
+## Effects
+
+The Effects section sits next to Control:
+
+| Control | What it does |
+|---|---|
+| Chorus I, Chorus II | The Juno-60 chorus; both together for a wider sound |
+| Reverb | How much reverb is added to the dry sound (0 = none) |
+| Length | How long the reverb rings out, 0.3 to 12 seconds |
+| Texture | Drive: warmth at low settings, roughness and grit at high settings |
+| FM | A bell-like, metallic 2-operator FM tone layered onto the oscillators |
+
+Presets set all of them; the plugin shows each as a Live parameter.
+
 ## Presets
 
 100 factory sounds in 10 categories (Bass, Lead, Pad, Keys, Brass, Strings,

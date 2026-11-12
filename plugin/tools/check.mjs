@@ -137,6 +137,7 @@ console.log('Sound (web engine vs plugin engine, 48 kHz)');
     ['Default patch, 6-note chord into the limiter', { ...defaults(), volume: 1, vcaLevel: 1 }, chord([36, 43, 48, 55, 60, 64], 1.5)],
     ['PWM pad, chorus I+II, LFO, slow attack', { ...defaults(), dcoPulse: 1, dcoSub: 1, dcoPwm: 0.6, chorus2: 1, dcoLfo: 0.3, vcfLfo: 0.3, lfoDelay: 0.2, envA: 0.6, envR: 0.7, vcfRes: 0.5, hpfFreq: 0.3 }, chord([48, 55, 60, 63], 1.2)],
     ['Long release, 8 notes: voice stealing', { ...defaults(), envR: 0.8 }, seq([48, 52, 55, 59, 62, 65, 69, 72], 0.15, 0.1)],
+    ['Effects: reverb, texture, FM', { ...defaults(), revMix: 0.7, revLength: 0.6, texture: 0.6, fm: 0.5 }, seq([48, 55, 60, 67], 0.3, 0.2)],
     ['Gate VCA, noise, velocity, negative env', { ...defaults(), vcaMode: 1, dcoNoise: 0.4, velocityEnv: 1, vcfEnvPolarity: 1, vcfEnv: 0.6, vcfKybd: 1 }, seq([40, 52, 64, 76, 88], 0.2, 0.1)],
   ];
 

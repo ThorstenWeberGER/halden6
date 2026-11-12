@@ -89,9 +89,8 @@ void Engine::prepare (int sampleRate, int maxBlock)
     effect->init (sampleRate);
     ZoneMap map;
     effect->buildUserInterface (&map);
-    effectZones[0] = map.find ("chorusMode");
-    effectZones[1] = map.find ("hpf");
-    effectZones[2] = map.find ("outGain");
+    for (int k = 0; k < DspValues::kCount; ++k)
+        effectZones[k] = map.find (kDspNames[k]);
 
     mix.assign ((size_t) std::max (1, maxBlock), 0.0f);
     scratch.assign ((size_t) std::max (1, maxBlock), 0.0f);
@@ -127,9 +126,8 @@ void Engine::setPanel (const float* newParams, const Performance& newPerf)
         for (auto& v : voices)
             if (v->zones[k] != nullptr)
                 *v->zones[k] = value;
-        const int e = k == DspValues::chorusMode ? 0 : k == DspValues::hpf ? 1 : k == DspValues::outGain ? 2 : -1;
-        if (e >= 0 && effectZones[e] != nullptr)
-            *effectZones[e] = value;
+        if (effectZones[k] != nullptr)
+            *effectZones[k] = value;
         sent.v[k] = d.v[k];
     }
     firstPush = false;

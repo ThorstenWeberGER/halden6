@@ -9,6 +9,7 @@ own licence.
 | Component | Where | Licence | Licence text |
 |---|---|---|---|
 | Faust standard libraries (oscillators, Moog ladder filter, envelopes, filters, delays) | Compiled into `dsp/halden6-dsp.js` from `dsp/halden6.dsp` | MIT and STK-4.3 (MIT-style), per library function | Faust libraries repository |
+| JPverb reverb (`re.jpverb`, Julian Parker, Till Bovermann) | Faust reverbs library, compiled into the sound engine | MIT | Faust libraries repository |
 | junologue-chorus by Peter Allwin (Juno-60 chorus, ported to Faust) | `dsp/halden6.dsp` | MIT | `vendor/junologue-chorus-LICENSE.txt` |
 | faustwasm runtime (@grame/faustwasm) | `vendor/faustwasm.js` | LGPL-2.1 | `vendor/faustwasm-COPYING.txt` |
 | Barlow Condensed font | `fonts/` | SIL Open Font License 1.1 | `fonts/OFL-BarlowCondensed.txt` |
