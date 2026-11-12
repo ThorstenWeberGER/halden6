@@ -169,7 +169,7 @@
       const btn = el('button', `tgl tgl-${c.color || 'yellow'}`, c.icon ? ICONS[c.icon] : `<span>${c.label}</span>`);
       btn.setAttribute('aria-label', c.label);
       wrap.append(led, btn);
-      if (c.icon) wrap.append(el('div', 'ctl-label', c.label));
+      if (c.icon || c.caption) wrap.append(el('div', 'ctl-label', c.caption || c.label));
       const render = () => {
         const on = !!S.params[c.id];
         wrap.classList.toggle('on', on);
@@ -320,7 +320,9 @@
     window.PANEL.filter(s => s.row === rowId).forEach(s => {
       const sec = el('section', `module accent-${s.accent}`);
       sec.dataset.cid = s.id;
-      sec.style.setProperty('--weight', s.custom ? 40 : s.controls.reduce((sum, c) => sum + (c.group ? W[c.type] * 0.7 : W[c.type]), 0).toFixed(1));
+      sec.style.setProperty('--weight', s.custom ? 40 : s.weight ?? s.controls.reduce((sum, c) => sum + (c.group ? W[c.type] * 0.7 : W[c.type]), 0).toFixed(1));
+      if (s.rows) sec.classList.add('module-rows');
+      if (s.stack) sec.classList.add('module-nowrap'); // a stacked column stays beside the rest
       const head = el('header', 'module-head', `<h3>${s.title}</h3>`);
       head.dataset.cid = s.id;
       const body = el('div', 'module-body');
@@ -341,6 +343,7 @@
           if (!groupBox || groupBox.dataset.group !== c.group) {
             groupBox = el('div', 'ctl-group');
             groupBox.dataset.group = c.group;
+            if (s.stack && s.stack.includes(c.group)) groupBox.classList.add('ctl-stack');
             body.append(groupBox);
           }
           groupBox.append(built.node);

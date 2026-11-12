@@ -28,6 +28,7 @@ subLevel   = hslider("subLevel", 0.6, 0, 1, 0.001) : sm;
 noiseLevel = hslider("noiseLevel", 0, 0, 1, 0.001) : sm;
 pwmAmt     = hslider("pwmAmt", 0.135, 0, 0.45, 0.001) : sm;
 pwmMode    = hslider("pwmMode", 1, 0, 2, 1);        // 0 fixed width, 1 LFO, 2 envelope
+fmAmt      = hslider("fm", 0, 0, 1, 0.001) : sm;    // 2-operator FM layer, 0 = off
 
 // LFO
 lfoRate    = hslider("lfoRate", 1, 0.05, 30, 0.001) : sm;
@@ -68,10 +69,15 @@ lfo    = lfoRaw * en.asr(max(0.001, lfoDelay), 1, 0.05, gate);
 f     = freq : si.smooth(ba.tau2pole(glide / 3));
 fm    = f * pow(2, (pitchCents + lfo * lfoPitch) / 1200);
 duty  = ba.selectn(3, pwmMode, 0.5 - pwmAmt, 0.5 + pwmAmt * lfo, 0.5 - pwmAmt * env);
+// FM: a classic 2-operator pair, a sine one octave up phase-modulating a sine
+// at the note's pitch. The knob raises both the modulation (bell-like,
+// metallic overtones) and the level of this layer, so 0 is the plain DCO.
+fmOp  = sin(2 * ma.PI * os.lf_sawpos(fm) + fmAmt * 4 * sin(2 * ma.PI * os.lf_sawpos(fm * 2)));
 osc   = os.sawtooth(fm) * sawOn * 0.35
       + os.pulsetrain(fm, duty) * pulseOn * 0.35
       + os.square(fm * 0.5) * subOn * subLevel * 0.4
-      + no.noise * noiseLevel * 0.3;
+      + no.noise * noiseLevel * 0.3
+      + fmOp * fmAmt * 0.4;
 
 // Filter: cutoff moved by envelope, LFO, keyboard tracking and pitch wheel
 note   = ba.hz2midikey(freq);
@@ -154,4 +160,28 @@ with {
   clip  = max(-1) : min(1);                          // last safety net, normally idle
 };
 
-effect = fi.highpass(2, hpfFreq) : chorus : *(outGain), *(outGain) : limiter;
+//---------------------------------------------------------------------------
+// Texture: drive from warm to gritty. A tanh saturation with a little
+// asymmetry (even harmonics, "roughness"); 0 is the untouched signal. The
+// level is roughly kept as the drive rises; the limiter catches the rest.
+//---------------------------------------------------------------------------
+texture = hslider("texture", 0, 0, 1, 0.001) : sm;
+drive(x) = x * (1 - w) + shaped * w
+with {
+  d      = 1 + 24 * texture;
+  bias   = 0.25 * texture;
+  w      = min(1, texture * 3);
+  shaped = (ma.tanh(x * d + bias) - ma.tanh(bias)) / sqrt(d) : fi.dcblocker;
+};
+
+//---------------------------------------------------------------------------
+// Reverb: re.jpverb (Julian Parker, MIT), a lush algorithmic reverb made for
+// synthesizers. Amount adds the reverb to the dry sound; Length is its decay
+// time in seconds. Its delay lines follow the sample rate.
+//---------------------------------------------------------------------------
+revMix  = hslider("revMix", 0, 0, 1, 0.001) : sm;
+revTime = hslider("revTime", 1.7, 0.3, 12, 0.01) : sm;
+// jpverb comes out hot: 0.3 puts Amount 100 % at about the dry level
+reverb  = _,_ <: _,_, (re.jpverb(revTime, 0.35, 1.2, 0.707, 0.15, 0.5, 1, 1, 0.8, 500, 3500) : *(revMix * 0.3), *(revMix * 0.3)) :> _,_;
+
+effect = fi.highpass(2, hpfFreq) : drive : chorus : reverb : *(outGain), *(outGain) : limiter;

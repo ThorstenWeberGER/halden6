@@ -38,6 +38,8 @@ window.HaldenMapping = function (P) {
       vcaGate: P.vcaMode, velEnv: P.velocityEnv,
       hpf: hpfHz(),
       chorusMode: P.chorus1 && P.chorus2 ? 3 : P.chorus2 ? 2 : P.chorus1 ? 1 : 0,
+      revMix: P.revMix * P.revMix, revTime: expMap(P.revLength, 0.3, 12),
+      texture: P.texture, fm: P.fm,
       // +14 dB makeup (one note peaks around -24 dBFS, too quiet), VCA level and
       // volume. Chords go over full scale; the limiter in halden6.dsp catches them.
       outGain: OUT_MAKEUP * P.vcaLevel * 1.2 * P.volume * P.volume,
@@ -60,6 +62,8 @@ window.HaldenMapping = function (P) {
       case 'bendDco': return (v * 12).toFixed(1) + ' st';
       case 'pitchWheel': return (v >= 0 ? '+' : '') + v.toFixed(2);
       case 'arpGate': return Math.round(5 + v * 95) + ' %';
+      case 'revMix': case 'texture': case 'fm': return Math.round(v * 100) + ' %';
+      case 'revLength': return sec(expMap(v, 0.3, 12));
       case 'arpSwing': return Math.round(v * 100) + ' %';
       default: return (v * 10).toFixed(1);
     }

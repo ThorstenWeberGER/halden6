@@ -215,6 +215,12 @@ main {
 
 /* controls that belong together stay on one line */
 .ctl-group { display: flex; gap: 0.5rem; flex-wrap: nowrap; }
+/* ... or on top of each other (panel.js: section `stack`) */
+.ctl-group.ctl-stack { flex-direction: column; align-items: center; gap: 1.4rem; }
+/* sections whose groups are rows, top to bottom (panel.js: `rows`) */
+.module-rows .module-body { flex-direction: column; flex-wrap: nowrap; justify-content: space-evenly; }
+.module-rows .ctl-group { justify-content: center; gap: 1.2rem; }
+.module-nowrap .module-body { flex-wrap: nowrap; }
 
 /* ---------- fader ---------- */
 .fader { position: relative; width: 3rem; height: var(--fader-h); cursor: ns-resize; touch-action: none; --cap: 1.15rem; }

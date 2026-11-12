@@ -17,22 +17,31 @@
 // fold-out arpeggiator. A section with `custom` is drawn by its own code.
 // `graph` adds a live graph at the top of the section (see viz.js).
 //
-// Controls next to each other with the same `group` stay side by side.
+// Controls next to each other with the same `group` stay side by side; a
+// section's `stack` lists groups whose controls sit on top of each other.
+// A section with `rows: true` stacks its groups as rows, top to bottom, and
+// `weight` sets its width (otherwise it follows its controls).
+// `caption` puts a line of text under a toggle, and `paramName` is the name
+// the plugin shows in the DAW (otherwise "Section Label").
 
 window.PANEL = [
   {
-    id: 'control', title: 'Control', accent: 'blue', row: 1,
+    id: 'control', title: 'Control', accent: 'blue', row: 1, weight: 3.2, stack: ['right'],
     controls: [
       { id: 'velocityEnv', type: 'slider', label: 'Velocity Env', value: 0 },
-      { id: 'voices', type: 'stepper', label: 'Voices', min: 1, max: 6, value: 6 },
-      { id: 'panic', type: 'button', label: 'Panic' },
+      { id: 'voices', type: 'stepper', label: 'Voices', min: 1, max: 6, value: 6, group: 'right' },
+      { id: 'panic', type: 'button', label: 'Panic', group: 'right' },
     ],
   },
   {
-    id: 'chorus', title: 'Chorus', accent: 'blue', row: 1,
+    id: 'chorus', title: 'Effects', accent: 'blue', row: 1, weight: 2.6, rows: true,
     controls: [
-      { id: 'chorus1', type: 'toggle', label: 'I', color: 'yellow', value: 1 },
-      { id: 'chorus2', type: 'toggle', label: 'II', color: 'orange', value: 0 },
+      { id: 'chorus1', type: 'toggle', label: 'I', caption: 'Chorus I', paramName: 'Chorus I', color: 'yellow', value: 1, group: 'chorus' },
+      { id: 'chorus2', type: 'toggle', label: 'II', caption: 'Chorus II', paramName: 'Chorus II', color: 'orange', value: 0, group: 'chorus' },
+      { id: 'revMix', type: 'knob', label: 'Reverb', paramName: 'Reverb Amount', value: 0, group: 'reverb' },
+      { id: 'revLength', type: 'knob', label: 'Length', paramName: 'Reverb Length', value: 0.5, group: 'reverb' },
+      { id: 'texture', type: 'knob', label: 'Texture', paramName: 'Texture', value: 0, group: 'tone' },
+      { id: 'fm', type: 'knob', label: 'FM', paramName: 'FM', value: 0, group: 'tone' },
     ],
   },
   {

@@ -66,7 +66,7 @@ private:
     std::vector<std::unique_ptr<Voice>> voices;
     std::unique_ptr<Halden6Effect> effect;
     std::vector<float> mix, scratch;
-    float* effectZones[3] {};               // chorusMode, hpf, outGain
+    float* effectZones[DspValues::kCount] {};   // the effect's controls, by DspValues index
     uint64_t date = 0;
 
     float params[kNumParams] {};

@@ -10,6 +10,7 @@
 //       flfo (LFO to filter, 0..1) kybd hpf (Hz) A D R (s) S (0..1)
 //       gate (VCA gate mode) level ch (0 off, 1 I, 2 II, 3 I+II)
 //       mono ('ml'|'gml') velo bend (semitones) voices
+//       rev (reverb amount 0..1) revLen (reverb length 0..1) tex (texture) fm
 
 (function () {
   const INIT = {
@@ -18,6 +19,7 @@
     cut: 3000, res: 0.1, env: 0.3, inv: false, flfo: 0, kybd: 0.5, hpf: 10,
     A: 0.003, D: 0.5, S: 0.7, R: 0.3, gate: false, level: 0.7, ch: 1,
     mono: '', velo: 0.3, bend: 2, voices: 6,
+    rev: 0, revLen: 0.5, tex: 0, fm: 0,
   };
 
   const inv = (x, min, max) => Math.min(1, Math.max(0, Math.log(x / min) / Math.log(max / min)));
@@ -37,6 +39,7 @@
       chorus1: +(p.ch === 1 || p.ch === 3), chorus2: +(p.ch === 2 || p.ch === 3),
       ml: +(p.mono === 'ml'), gml: +(p.mono === 'gml'),
       velocityEnv: p.velo, bendDco: Math.min(1, p.bend / 12), voices: p.voices,
+      revMix: p.rev, revLength: p.revLen, texture: p.tex, fm: p.fm,
     };
   }
 

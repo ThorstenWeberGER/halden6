@@ -65,7 +65,7 @@ const params = [];
 for (const s of PANEL) {
   for (const c of s.controls) {
     if (SKIP_TYPES.has(c.type)) continue;
-    const name = ARP_ROWS.has(s.row) ? `Arp ${c.label}` : NO_PREFIX.has(s.id) ? c.label : `${s.title} ${c.label}`;
+    const name = c.paramName || (ARP_ROWS.has(s.row) ? `Arp ${c.label}` : NO_PREFIX.has(s.id) ? c.label : `${s.title} ${c.label}`);
     let type, min = 0, max = 1, options = [];
     if (c.type === 'slider' || c.type === 'knob') { type = 'Float'; min = c.bipolar ? -1 : 0; }
     else if (c.type === 'toggle') type = 'Bool';

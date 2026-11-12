@@ -180,7 +180,8 @@ int main (int argc, char** argv)
     pump (100);
 
     std::cout << "Arpeggiator" << std::endl;
-    js (*ed, "document.querySelector('#arp-toggle').click(); true");
+    // the web view remembers the bar's state between runs: open it only if closed
+    js (*ed, "if (!document.querySelector('#arp-panel').classList.contains('open')) document.querySelector('#arp-toggle').click(); true");
     pump (300);
     check ((bool) js (*ed, "document.querySelector('#arp-panel').classList.contains('open')"), "the arpeggiator bar opens");
     js (*ed, "const s = document.querySelector('#arp-preset'); s.value = '0'; s.dispatchEvent(new Event('change')); true");

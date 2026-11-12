@@ -22,7 +22,8 @@ struct DspValues
     {
         pitchCents, glide, sawOn, pulseOn, subOn, subLevel, noiseLevel, pwmAmt, pwmMode,
         lfoRate, lfoWave, lfoDelay, lfoRetrig, lfoPitch, cutoff, res, envAmt, lfoFilt, kybd,
-        bendVcf, attack, decay, sustain, release, vcaGate, velEnv, hpf, chorusMode, outGain,
+        bendVcf, attack, decay, sustain, release, vcaGate, velEnv, hpf, chorusMode,
+        revMix, revTime, texture, fm, outGain,
         kCount
     };
     double v[kCount] {};
@@ -32,7 +33,8 @@ struct DspValues
 inline const char* const kDspNames[DspValues::kCount] = {
     "pitchCents", "glide", "sawOn", "pulseOn", "subOn", "subLevel", "noiseLevel", "pwmAmt", "pwmMode",
     "lfoRate", "lfoWave", "lfoDelay", "lfoRetrig", "lfoPitch", "cutoff", "res", "envAmt", "lfoFilt", "kybd",
-    "bendVcf", "attack", "decay", "sustain", "release", "vcaGate", "velEnv", "hpf", "chorusMode", "outGain",
+    "bendVcf", "attack", "decay", "sustain", "release", "vcaGate", "velEnv", "hpf", "chorusMode",
+    "revMix", "revTime", "texture", "fm", "outGain",
 };
 
 constexpr double kOutMakeup = 5.1;   // +14 dB, as OUT_MAKEUP in synth.js
@@ -79,6 +81,10 @@ inline DspValues dspValues (const float* p, const Performance& perf)
     v[DspValues::velEnv] = P (P_velocityEnv);
     v[DspValues::hpf] = expMap (P (P_hpfFreq), 10, 1500);
     v[DspValues::chorusMode] = c1 && c2 ? 3 : c2 ? 2 : c1 ? 1 : 0;
+    v[DspValues::revMix] = P (P_revMix) * P (P_revMix);
+    v[DspValues::revTime] = expMap (P (P_revLength), 0.3, 12);
+    v[DspValues::texture] = P (P_texture);
+    v[DspValues::fm] = P (P_fm);
     v[DspValues::outGain] = kOutMakeup * P (P_vcaLevel) * 1.2 * P (P_volume) * P (P_volume);
     return d;
 }
