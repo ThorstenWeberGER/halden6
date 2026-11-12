@@ -33,9 +33,16 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Build with install.ps1 (build only, no install)
-        # Windows PowerShell 5.1, as install.cmd uses
+        # Windows PowerShell 5.1, as install.cmd uses. The version comes from
+        # the release button or the tag; other builds use the default.
         shell: powershell
-        run: .\install.ps1 -BuildOnly -Yes
+        env:
+          RELEASE_INPUT: ${{ inputs.release }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          $version = if ($env:RELEASE_INPUT) { $env:RELEASE_INPUT } elseif ($env:REF_TYPE -eq 'tag') { $env:REF_NAME } else { '' }
+          if ($version) { .\install.ps1 -BuildOnly -Yes -Version $version } else { .\install.ps1 -BuildOnly -Yes }
       - name: Stress-test with pluginval (strictness 5)
         shell: powershell
         run: |
