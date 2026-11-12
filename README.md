@@ -82,6 +82,25 @@ Switch **On**, then choose a mode:
 
 ![The open arpeggiator in Pattern mode with the factory pattern "Italo Octaves" at 118 BPM: Arp, Clock and Arp Mode sections on top, and the 16-step editor with note, velocity, gate and tie per step](docs/images/arpeggiator.png)
 
+## MIDI keyboards and controllers
+
+Plug in a MIDI keyboard or controller (USB or Bluetooth) and play: notes,
+velocity and pitch bend work right away, and go through the arpeggiator when
+it is on. To map a hardware knob or fader to any knob or fader on the panel:
+
+1. Click **MIDI learn** in the top bar (the browser asks once to allow MIDI).
+2. Click a knob or fader on the panel; it blinks.
+3. Move a knob or fader on your controller. Done: it now follows that control.
+
+While learning, each mapped control shows its CC number; click a mapped
+control to remove its mapping, and click **MIDI learn** again to finish.
+Mappings are kept in the browser.
+
+Works in Chrome, Edge, Opera and Firefox on desktop and Android. Safari, and
+so every browser on iPhone and iPad, has no Web MIDI; the button is hidden
+there. In the plugin, the DAW sends the MIDI: map controls with the DAW's own
+MIDI mapping (in Ableton Live: MIDI Map mode, Ctrl+M / Cmd+M).
+
 ## Effects
 
 The Effects section sits next to Control:
@@ -186,6 +205,7 @@ Windows build and pluginval.
 | `arp.js` | Arpeggiator: clock, modes, recording, pattern editor, slots. |
 | `arp-patterns.js` | The example pattern and the 7 factory patterns, shared with the plugin. |
 | `ui.js` | Rendering, input, keyboard. |
+| `midi.js` | MIDI keyboards and controllers, MIDI learn (web version). |
 | `styles.css` | Look, layout and skins. |
 | `fonts/` | Bundled font files and their licences. |
 | `docs/` | README images, the script that renders them, the plugin plan, the next-steps checklist, and a guideline for building another plugin this way. |

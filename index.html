@@ -29,6 +29,9 @@
     </div>
     <div class="topbar-actions">
       <span id="audio-status" class="pill pill-muted" title="Browsers start audio only after a click or key press">Audio off · tap or click anywhere</span>
+      <button id="btn-midi" class="tb-btn" aria-pressed="false" hidden title="Connect a MIDI keyboard or controller, and map knobs and faders to it">
+        <span class="tb-dot"></span>MIDI learn <span class="midi-state"></span>
+      </button>
       <div class="skin-switch" role="group" aria-label="Skin">
         <button class="skin-btn" data-skin="studio">Studio</button>
         <button class="skin-btn" data-skin="neon">Neon</button>
@@ -119,5 +122,6 @@
   <script src="viz.js"></script>
   <script src="backdrop.js"></script>
   <script src="ui.js"></script>
+  <script src="midi.js"></script>
 </body>
 </html>

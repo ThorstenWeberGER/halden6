@@ -39,6 +39,9 @@ it is done.
       on the beat; stop Live and the arp keeps going at Live's tempo.
 - [ ] Pitch bend: move your MIDI keyboard's pitch wheel; the pitch follows
       (the panel's wheel does not move with it).
+- [ ] MIDI mapping: in Live's MIDI Map mode, map a hardware knob to a Halden 6
+      parameter (for plugins, Live may need the parameter added with the
+      device's "Configure" button first).
 - [ ] Volume: a single note at default volume is clearly audible in your
       headphones; big chords do not crackle.
 

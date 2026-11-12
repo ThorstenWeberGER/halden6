@@ -58,7 +58,7 @@ juce_add_binary_data(Halden6WebUI
   NAMESPACE Halden6WebUI
   SOURCES
     ${R}/index.html ${R}/styles.css ${R}/panel.js ${R}/mapping.js ${R}/presets.js
-    ${R}/arp-patterns.js ${R}/arp.js ${R}/viz.js ${R}/backdrop.js ${R}/ui.js
+    ${R}/arp-patterns.js ${R}/arp.js ${R}/viz.js ${R}/backdrop.js ${R}/ui.js ${R}/midi.js
     ${R}/fonts/fonts.css ${R}/fonts/inter-variable.woff2 ${R}/fonts/jetbrains-mono-variable.woff2
     ${R}/fonts/barlow-condensed-500.woff2 ${R}/fonts/barlow-condensed-600.woff2 ${R}/fonts/barlow-condensed-700.woff2
     ${CMAKE_CURRENT_SOURCE_DIR}/web/bridge.js)
