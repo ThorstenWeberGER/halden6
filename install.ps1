@@ -23,7 +23,8 @@ param(
   [switch]$Yes,
   [switch]$Validate,
   [switch]$BuildOnly,
-  [switch]$Uninstall
+  [switch]$Uninstall,
+  [string]$Version                               # x.y.z baked into the plugin; default: plugin/CMakeLists.txt
 )
 
 $ErrorActionPreference = 'Stop'
@@ -177,7 +178,12 @@ if ($Ref) {
 git -C $Src submodule update --init --depth 1 plugin/JUCE
 if ($LASTEXITCODE -ne 0) { Fail 'cannot fetch JUCE (git submodule)' }
 $Commit = (git -C $Src rev-parse --short HEAD).Trim()
-$Version = ((Select-String -Path (Join-Path $Src 'plugin\CMakeLists.txt') -Pattern 'project\(Halden6 VERSION ([\d.]+)').Matches[0].Groups[1].Value)
+if ($Version) {
+  $Version = $Version.TrimStart('v')
+  if ($Version -notmatch '^\d+\.\d+\.\d+$') { Fail "version must look like 1.2.3, not '$Version'" }
+} else {
+  $Version = ((Select-String -Path (Join-Path $Src 'plugin\CMakeLists.txt') -Pattern 'set\(HALDEN6_VERSION "([\d.]+)"').Matches[0].Groups[1].Value)
+}
 Say "Building $PluginName $Version ($Commit)"
 
 # The WebView2 SDK (headers and the static loader library) for the build
@@ -196,7 +202,7 @@ if (-not (Test-Path (Join-Path $Wv2Dir 'build\native\include\WebView2.h'))) {
 # ---------------------------------------------------------------- 4. build
 Step 'Building (the first build takes a few minutes)'
 $Build = Join-Path $Root "build\$Channel"
-cmake -S (Join-Path $Src 'plugin') -B $Build -G 'Visual Studio 17 2022' -A x64 "-DHALDEN6_CHANNEL=$Channel" "-DJUCE_WEBVIEW2_PACKAGE_LOCATION=$Packages"
+cmake -S (Join-Path $Src 'plugin') -B $Build -G 'Visual Studio 17 2022' -A x64 "-DHALDEN6_CHANNEL=$Channel" "-DHALDEN6_VERSION=$Version" "-DJUCE_WEBVIEW2_PACKAGE_LOCATION=$Packages"
 if ($LASTEXITCODE -ne 0) { Fail 'CMake could not configure the build' }
 cmake --build $Build --config Release --target Halden6_VST3 --parallel
 if ($LASTEXITCODE -ne 0) { Fail 'the build failed' }

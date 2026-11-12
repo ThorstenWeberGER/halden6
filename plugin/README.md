@@ -41,16 +41,16 @@ See the install section of the main [README](../README.md#halden-6-in-ableton-li
 
 ## Releasing
 
-1. Set the version in `CMakeLists.txt` (`project(Halden6 VERSION x.y.z)`) and
-   merge it into `main`.
-2. Either push a tag (`git tag vx.y.z && git push origin vx.y.z`), or on
-   GitHub open **Actions > Plugin > Run workflow**, choose `main` and enter
-   the version `x.y.z`.
-3. GitHub Actions builds on Windows, runs pluginval and the checks, creates
-   the tag if needed, and publishes `Halden6-vst3-x.y.z.zip` as a GitHub
-   release. The zip holds the plugin, `LICENSE.txt`, `THIRD-PARTY.md` and a
-   `README.txt` with the install steps and the source link the AGPL asks for.
-   A release made by hand on github.com gets the zip attached instead.
+On GitHub open **Actions > Plugin > Run workflow**, choose `main` and enter the
+version, e.g. `0.1.1`. Or push a tag (`git tag v0.1.1 && git push origin v0.1.1`).
+
+GitHub Actions bakes that version into the plugin, builds on Windows, runs
+pluginval and the checks, creates the tag if needed, and publishes
+`Halden6-vst3-0.1.1.zip` as a GitHub release. The zip holds the plugin,
+`LICENSE.txt`, `THIRD-PARTY.md` and a `README.txt` with the install steps and
+the source link the AGPL asks for. A release made by hand on github.com gets
+the zip attached instead. No file needs editing for a release; the version in
+`CMakeLists.txt` is only the default for local builds.
 
 Every push also builds the zip (kept with the Actions run) and runs pluginval
 at strictness level 5.

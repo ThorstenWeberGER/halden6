@@ -2,7 +2,13 @@
 #   cmake -S plugin -B build -DCMAKE_BUILD_TYPE=Release
 #   cmake --build build --config Release
 cmake_minimum_required(VERSION 3.22)
-project(Halden6 VERSION 0.1.0 LANGUAGES C CXX)
+# The version baked into the plugin. Releases set it from the release button
+# or the tag (cmake -DHALDEN6_VERSION=x.y.z); this default is for local builds.
+set(HALDEN6_VERSION "0.1.0" CACHE STRING "Plugin version, x.y.z")
+if(NOT HALDEN6_VERSION MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+$")
+  message(FATAL_ERROR "HALDEN6_VERSION must look like 1.2.3, not '${HALDEN6_VERSION}'")
+endif()
+project(Halden6 VERSION ${HALDEN6_VERSION} LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
