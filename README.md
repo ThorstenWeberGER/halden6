@@ -27,9 +27,9 @@ circuit fills them: published component values and hardware measurements
 - **Envelope**: curved like a charging capacitor, not straight lines.
 - **Oscillators**: saw, pulse and sub at the Juno's levels; noise rolled off
   above 5 kHz.
-- **Chorus**: I and II at the Juno's levels with its faint hiss, between the
-  same steep 5-pole filters as the Juno's delay chips; I+II is the Juno's own
-  fast vibrato.
+- **Chorus**: I and II at the Juno's levels, between the same steep 5-pole
+  filters as the Juno's delay chips; I+II is the Juno's own fast vibrato. The
+  Juno's chorus hiss is left out.
 - **HPF**: one pole, 6 dB per octave.
 
 ![The full Halden 6 panel in the Studio skin with the preset "PWM String Pad" loaded: Control, Chorus, LFO and DCO on the top row; Performance, HPF, VCF, VCA and ENV on the second row; the folded Arpeggiator bar and the keyboard below](docs/images/panel.png)
