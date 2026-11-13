@@ -169,9 +169,8 @@ process = filt * amp * vel * 0.6;
 // cutoffs, the soft limiter and the mode gains are taken from that code,
 // which builds on Juno-60 research by Andy Harman and JP Cimalando.
 // I+II is the Juno-60's own third mode: a fast, nearly mono vibrato (9.75 Hz,
-// 3.3 to 3.7 ms), measured by Andy Harman. The bucket-brigade chips also
-// hiss; that hiss is added to the wet signal at the level measured on a
-// Juno-60 (about 44 dB below a saw note in II and I+II, 8 dB less in I).
+// 3.3 to 3.7 ms), measured by Andy Harman. The Juno's bucket-brigade chips
+// also hiss; that hiss is left out on purpose, it is a constant noise floor.
 //---------------------------------------------------------------------------
 hpfFreq    = hslider("hpf", 10, 10, 2000, 0.1) : sm;
 chorusMode = hslider("chorusMode", 1, 0, 3, 1);    // 0 off, 1 I, 2 II, 3 I+II
@@ -200,7 +199,6 @@ tV(p) = (0.0033 - filtDelay + 0.0004 * p) * ma.SR;         // I+II: 3.3 to 3.7 m
 gA  = ba.selectn(4, chorusMode, 0, 1, 0, 0);        // chorus I share
 gB  = ba.selectn(4, chorusMode, 0, 0, 1, 0);        // chorus II share
 gV  = chorusMode == 3;                              // I+II vibrato
-hiss = ba.selectn(4, chorusMode, 0, 0.0006, 0.0016, 0.0016);
 on  = chorusMode > 0;
 dry = 1;                                            // the Juno-60 adds the delayed signal at full
 wet = select2(on, 0, 1);                            // level: chorus on is about 3 dB louder
@@ -215,8 +213,8 @@ with {
   a2R  = de.fdelay(maxDelay, tR(1 - p2), pre);
   a3L  = de.fdelay(maxDelay, tV(p3), pre);
   a3R  = a3L;                                       // I+II is one vibrato on both sides
-  wL   = (a1L * gA + a2L * gB + a3L * gV + no.noises(2, 0) * hiss) : bbdOut;   // reconstruction filter
-  wR   = (a1R * gA + a2R * gB + a3R * gV + no.noises(2, 1) * hiss) : bbdOut;
+  wL   = (a1L * gA + a2L * gB + a3L * gV) : bbdOut;   // reconstruction filter
+  wR   = (a1R * gA + a2R * gB + a3R * gV) : bbdOut;
   outL = x * dry + wL * wet;
   outR = x * dry + wR * wet;
 };
