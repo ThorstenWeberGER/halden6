@@ -17,7 +17,8 @@ window.HaldenMapping = function (P) {
   const lfoRateHz = () => P.lfoTempo > 0
     ? ((P.bpm || 120) / 60) / TEMPO_BEATS[P.lfoTempo]
     : expMap(P.lfoRate, 0.1, 20);
-  const ladderQ = () => 0.707 + P.vcfRes * P.vcfRes * 22;
+  // Filter feedback for a resonance setting, as in halden6.dsp (junoVCF)
+  const resK = () => 4.2 * Math.pow(Math.sin(Math.PI / 2 * P.vcfRes), 1.5);
 
   // Faust control values, in the units halden6.dsp expects
   function dspValues() {
@@ -75,8 +76,7 @@ window.HaldenMapping = function (P) {
     map: {
       attack, decay, release, cutoff, hpfHz, lfoRateHz,
       pulseWidth: () => (P.dcoPwmMod === 0 ? 0.5 : 0.5 - P.dcoPwm * 0.45),
-      // ladder resonance expressed as a biquad Q (dB) for the filter graph
-      resQ: () => 20 * Math.log10(ladderQ()),
+      resK,
     },
   };
 };

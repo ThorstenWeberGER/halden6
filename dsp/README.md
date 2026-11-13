@@ -1,9 +1,11 @@
 # Halden 6 sound engine (Faust)
 
-`halden6.dsp` is the synth voice (oscillators, PWM, sub, noise, Moog ladder filter,
-envelope, LFO) plus the effect after the voices: HPF, the Juno-60 chorus, output gain
-and a peak limiter. It is written in [Faust](https://faust.grame.fr) and built from
-blocks of the Faust standard libraries.
+`halden6.dsp` is the synth voice (oscillators, PWM, sub, noise, a Juno-60 style
+4-pole filter, envelope, LFO) plus the effect after the voices: HPF, the Juno-60
+chorus, output gain and a peak limiter. It is written in [Faust](https://faust.grame.fr)
+and built from blocks of the Faust standard libraries. The filter and the envelope
+are written out in the file. Levels, curves and resonance are fitted to recordings
+of a real Juno-60 from [Andy Harman's Juno60 analysis](https://github.com/pendragon-andyh/Juno60).
 
 | File | What it is |
 |---|---|
@@ -29,5 +31,6 @@ See [../docs/plugin-plan.md](../docs/plugin-plan.md).
 ## Licences
 
 - Faust libraries used here: STK-4.3 (MIT-style) and MIT.
+- Juno-60 measurements: Andy Harman's Juno60 analysis, MIT, see `../vendor/juno60-analysis-LICENSE.txt`.
 - Juno-60 chorus: ported from [junologue-chorus](https://github.com/peterall/junologue-chorus) by Peter Allwin, MIT, see `../vendor/junologue-chorus-LICENSE.txt`.
 - faustwasm runtime (`../vendor/faustwasm.js`): LGPL-2.1, see `../vendor/faustwasm-COPYING.txt`.
