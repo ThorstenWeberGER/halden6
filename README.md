@@ -9,8 +9,28 @@ voice and that chorus, on a panel that scales from a laptop to a studio
 monitor, with an arpeggiator built right in. I couldn't find one, so I built it.
 
 Halden 6 is one HTML page with a real sound engine behind it: six voices, a
-Moog-style ladder filter and the Juno-60 chorus, written in Faust and compiled
-to WebAssembly. No install, no server, no account.
+Juno-60 style 4-pole filter and the Juno-60 chorus, written in Faust and
+compiled to WebAssembly. No install, no server, no account.
+
+## Sounds like a Juno-60
+
+The voice is fitted to recordings of a real Juno-60 from Andy Harman's
+[Juno60 analysis](https://github.com/pendragon-andyh/Juno60) (MIT licence),
+and checked against them. Where the recordings leave gaps, the Juno-60
+circuit fills them: published component values and hardware measurements
+(see `THIRD-PARTY.md`).
+
+- **Filter**: a 4-pole low-pass whose resonance peaks about 18 dB at the top
+  and self-oscillates from about 8.5, as on the Juno. As in the Juno's
+  circuit, part of the input runs into the resonance path, so full resonance
+  costs about 7 dB of bass, not 14.
+- **Envelope**: curved like a charging capacitor, not straight lines.
+- **Oscillators**: saw, pulse and sub at the Juno's levels; noise rolled off
+  above 5 kHz.
+- **Chorus**: I and II at the Juno's levels with its faint hiss, between the
+  same steep 5-pole filters as the Juno's delay chips; I+II is the Juno's own
+  fast vibrato.
+- **HPF**: one pole, 6 dB per octave.
 
 ![The full Halden 6 panel in the Studio skin with the preset "PWM String Pad" loaded: Control, Chorus, LFO and DCO on the top row; Performance, HPF, VCF, VCA and ENV on the second row; the folded Arpeggiator bar and the keyboard below](docs/images/panel.png)
 
@@ -107,7 +127,7 @@ The Effects section sits next to Control:
 
 | Control | What it does |
 |---|---|
-| Chorus I, Chorus II | The Juno-60 chorus; both together for a wider sound |
+| Chorus I, Chorus II | The Juno-60 chorus; both together give the Juno-60's fast vibrato (I+II) |
 | Reverb | How much reverb is added to the dry sound (0 = none) |
 | Length | How long the reverb rings out, 0.3 to 12 seconds |
 | Texture | Drive: warmth at low settings, roughness and grit at high settings |
@@ -199,7 +219,7 @@ Windows build and pluginval.
 | `mapping.js` | Fader positions to real units and readout text, shared with the plugin. |
 | `presets.js` | The 100 factory presets. |
 | `dsp/` | The synth voice, HPF and Juno-60 chorus in Faust, compiled to WebAssembly. See `dsp/README.md`. |
-| `vendor/` | faustwasm browser runtime (LGPL-2.1) and the junologue-chorus licence (MIT). |
+| `vendor/` | faustwasm browser runtime (LGPL-2.1), and the licences of junologue-chorus and the Juno60 analysis (both MIT). |
 | `viz.js` | Section graphs and the live output scope. |
 | `backdrop.js` | Octagon backdrop behind the main panel, coloured per skin. |
 | `arp.js` | Arpeggiator: clock, modes, recording, pattern editor, slots. |

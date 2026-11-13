@@ -68,6 +68,7 @@ private:
     std::vector<float> mix, scratch;
     float* effectZones[DspValues::kCount] {};   // the effect's controls, by DspValues index
     uint64_t date = 0;
+    uint64_t framePos = 0;   // frames rendered since prepare(): the grid of the level windows
 
     float params[kNumParams] {};
     Performance perf;

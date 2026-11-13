@@ -34,7 +34,7 @@ namespace
     constexpr int kFree = -1, kRelease = -2, kLegato = -3, kNoVoice = -4;
     constexpr int kFade = 64;                  // steal crossfade: 64 frames out, 64 in
     constexpr int kLevelWindow = 128;          // frames per "is this voice silent" check
-    constexpr float kStopLevel = 3.162e-5f;    // -90 dB: a releasing voice below this is freed
+    constexpr float kStopLevel = 3.162e-5f;    // -90 dB: a releasing voice whose RMS over a window is below this is freed
 
     bool isOn (float v) { return v > 0.5f; }
     bool differs (double a, double b) { return std::memcmp (&a, &b, sizeof (double)) != 0; }
@@ -53,7 +53,7 @@ struct Engine::Voice
     uint64_t date = 0;
     int fadeOut = 0;                  // frames of the fade-out done
     int fadeIn = kFade;               // frames of the fade-in done (kFade = none running)
-    float windowMax = 0.0f;
+    float windowSumSq = 0.0f;         // sum of squares in the current level window
     int windowCount = 0;
 
     void start (int note, int velocity)
@@ -99,6 +99,7 @@ void Engine::prepare (int sampleRate, int maxBlock)
     sounding.reserve (64);
     held.reserve (128);
     date = 0;
+    framePos = 0;
     firstPush = true;
     setPanel (params, perf);
 }
@@ -203,7 +204,13 @@ int Engine::getFreeVoice()
     {
         if (voices[(size_t) i]->curNote == kFree)
         {
-            voices[(size_t) i]->date = date++;
+            auto& v = *voices[(size_t) i];
+            v.date = date++;
+            // A free voice is not rendered, so its level window stopped. Put it
+            // back on the global 128-frame grid, as faustwasm measures the level
+            // per 128-frame render block: both then free a voice on the same frame.
+            v.windowCount = (int) (framePos % (uint64_t) kLevelWindow);
+            v.windowSumSq = 0.0f;
             return i;
         }
     }
@@ -325,16 +332,18 @@ void Engine::renderVoice (Voice& v, float* out, int n)
         for (int i = 0; i < m; ++i)
         {
             out[done + i] += buf[i];
-            v.windowMax = std::max (v.windowMax, std::abs (buf[i]));
+            v.windowSumSq += buf[i] * buf[i];
         }
         done += m;
 
         v.windowCount += m;
         if (v.windowCount >= kLevelWindow)
         {
-            if (v.curNote == kRelease && v.windowMax < kStopLevel)
+            // faustwasm's mixCheckVoice: the RMS of the block, summed in float in
+            // the same order, so both free a voice on the same frame
+            if (v.curNote == kRelease && std::sqrt (v.windowSumSq / (float) kLevelWindow) < kStopLevel)
                 v.curNote = kFree;
-            v.windowMax = 0.0f;
+            v.windowSumSq = 0.0f;
             v.windowCount = 0;
         }
         if (v.curNote == kFree)
@@ -356,6 +365,7 @@ void Engine::render (float* left, float* right, int numSamples)
         float* ins[] = { mix.data() };
         float* outs[] = { left + start, right + start };
         effect->compute (n, ins, outs);
+        framePos += (uint64_t) n;
 
         for (int i = start; i < start + n; ++i)
         {

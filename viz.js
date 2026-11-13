@@ -99,7 +99,7 @@
       const rate = S.map.lfoRateHz(), delay = P.lfoDelay * 3, win = 2;
       trace(c, x => {
         const t = x * win, p = (t * rate) % 1;
-        const amp = delay > 0 ? Math.min(1, t / delay) : 1;
+        const amp = delay > 0 ? Math.max(0, Math.min(1, (t - 0.75 * delay) / (0.25 * delay))) : 1; // silent, then fades in over the last quarter
         let v;
         switch (P.lfoWave) {
           case 1: v = 1 - 4 * Math.abs(p - 0.5); break;
@@ -113,35 +113,30 @@
       sc.val.textContent = `${LFO_NAMES[P.lfoWave]} · ${hz(rate)}${delay > 0 ? ' · delay ' + S.format('lfoDelay', P.lfoDelay) : ''}`;
     },
 
-    // Real frequency response of the three filters (HPF + 2 x lowpass)
+    // Frequency response of the sound engine's filters: the 4-pole low-pass
+    // with resonance feedback k and the Juno's input share c = 0.31 in the
+    // feedback, H = G (1 + c k) / (1 + k G) with G = 1 / (1 + s)^4, times the
+    // one-pole HPF. As on the Juno-60, more resonance thins the bass a little.
     filter(sc) {
       const c = prep(sc); if (!c) return;
-      const nodes = filterNodes();
-      const N = 256, f = new Float32Array(N), m1 = new Float32Array(N), m2 = new Float32Array(N), m3 = new Float32Array(N), ph = new Float32Array(N);
-      for (let i = 0; i < N; i++) f[i] = 20 * Math.pow(1000, i / (N - 1));
-      const fc = S.map.cutoff(), fh = S.map.hpfHz();
-      let db;
-      if (nodes) {
-        nodes.lp1.frequency.value = fc; nodes.lp1.Q.value = -3;
-        nodes.lp2.frequency.value = fc; nodes.lp2.Q.value = S.map.resQ();
-        nodes.hp.frequency.value = fh;
-        nodes.lp1.getFrequencyResponse(f, m1, ph);
-        nodes.lp2.getFrequencyResponse(f, m2, ph);
-        nodes.hp.getFrequencyResponse(f, m3, ph);
-        db = i => 20 * Math.log10(Math.max(1e-6, m1[i] * m2[i] * m3[i]));
-      } else {
-        db = i => -24 * Math.max(0, Math.log2(f[i] / fc)); // rough fallback
-      }
-      trace(c, (x) => {
-        const i = Math.min(N - 1, Math.round(x * (N - 1)));
-        return (db(i) + 48) / 66; // -48 dB .. +18 dB
-      }, { bipolar: false });
+      const fc = S.map.cutoff(), fh = S.map.hpfHz(), k = S.map.resK();
+      const db = f => {
+        const w = f / fc;
+        // (1 + jw)^4 = re + j im
+        const r2 = 1 - w * w, i2 = 2 * w;
+        const re = r2 * r2 - i2 * i2, im = 2 * r2 * i2;
+        const lp = (1 + 0.31 * k) / Math.hypot(re + k, im);
+        const wh = f / fh, hp = wh / Math.hypot(1, wh);
+        return 20 * Math.log10(Math.max(1e-6, lp * hp));
+      };
+      trace(c, (x) => (db(20 * Math.pow(1000, x)) + 48) / 66, { bipolar: false }); // -48 dB .. +18 dB
       const pos = Math.log(fc / 20) / Math.log(1000);
       if (pos > 0 && pos < 1) marker(c, pos);
       sc.val.textContent = `${hz(fc)} · res ${(P.vcfRes * 10).toFixed(1)}${P.hpfFreq > 0.02 ? ' · HPF ' + hz(fh) : ''}`;
     },
 
-    // ADSR with real proportions; the sustain hold is a fixed share for display
+    // ADSR with real proportions and the curves of halden6.dsp (junoEnv);
+    // the sustain hold is a fixed share for display
     env(sc) {
       const c = prep(sc); if (!c) return;
       const A = S.map.attack(), D = S.map.decay(), R = S.map.release(), Sl = P.envS;
@@ -149,10 +144,11 @@
       const total = A + D + hold + R;
       const y = trace(c, x => {
         const t = x * total;
-        if (t < A) return t / A;
-        if (t < A + D) return Sl + (1 - Sl) * Math.exp(-4 * (t - A) / D);
-        if (t < A + D + hold) return Sl + (1 - Sl) * Math.exp(-4);
-        return (Sl + (1 - Sl) * Math.exp(-4)) * Math.exp(-4 * (t - A - D - hold) / R);
+        const fall = (from, to, x) => Math.max(to, to - 0.031 + (from - to + 0.031) * Math.exp(-3.5 * x));
+        if (t < A) return (1 - Math.exp(-t / A)) / 0.632;
+        if (t < A + D) return fall(1, Sl, (t - A) / D);
+        if (t < A + D + hold) return Sl;
+        return fall(Sl, 0, (t - A - D - hold) / R);
       }, { bipolar: false });
       const { g, H } = c;
       g.fillStyle = 'rgba(255,255,255,0.45)'; g.font = '10px "JetBrains Mono", monospace';
@@ -163,19 +159,6 @@
       sc.val.textContent = `A ${f('envA')} D ${f('envD')} S ${f('envS')} R ${f('envR')}`;
     },
   };
-
-  let offline = null;
-  function filterNodes() {
-    if (offline === false) return null;
-    if (!offline) {
-      try {
-        const ctx = new OfflineAudioContext(1, 128, 44100);
-        const mk = type => { const n = ctx.createBiquadFilter(); n.type = type; return n; };
-        offline = { lp1: mk('lowpass'), lp2: mk('lowpass'), hp: mk('highpass') };
-      } catch (e) { offline = false; return null; }
-    }
-    return offline;
-  }
 
   // ---------- live scope ----------
   let buf = null, frame = 0;
