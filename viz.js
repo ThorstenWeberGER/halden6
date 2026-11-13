@@ -114,8 +114,9 @@
     },
 
     // Frequency response of the sound engine's filters: the 4-pole low-pass
-    // with resonance feedback k, H = G / (1 + k G) with G = 1 / (1 + s)^4,
-    // times the one-pole HPF. As on the Juno-60, more resonance thins the bass.
+    // with resonance feedback k and the Juno's input share c = 0.31 in the
+    // feedback, H = G (1 + c k) / (1 + k G) with G = 1 / (1 + s)^4, times the
+    // one-pole HPF. As on the Juno-60, more resonance thins the bass a little.
     filter(sc) {
       const c = prep(sc); if (!c) return;
       const fc = S.map.cutoff(), fh = S.map.hpfHz(), k = S.map.resK();
@@ -124,7 +125,7 @@
         // (1 + jw)^4 = re + j im
         const r2 = 1 - w * w, i2 = 2 * w;
         const re = r2 * r2 - i2 * i2, im = 2 * r2 * i2;
-        const lp = 1 / Math.hypot(re + k, im);
+        const lp = (1 + 0.31 * k) / Math.hypot(re + k, im);
         const wh = f / fh, hp = wh / Math.hypot(1, wh);
         return 20 * Math.log10(Math.max(1e-6, lp * hp));
       };

@@ -6,6 +6,8 @@ chorus, output gain and a peak limiter. It is written in [Faust](https://faust.g
 and built from blocks of the Faust standard libraries. The filter and the envelope
 are written out in the file. Levels, curves and resonance are fitted to recordings
 of a real Juno-60 from [Andy Harman's Juno60 analysis](https://github.com/pendragon-andyh/Juno60).
+The filter's input share in the resonance path and the chorus filters come
+from the Juno-60 circuit; the sources are listed in `../THIRD-PARTY.md`.
 
 | File | What it is |
 |---|---|

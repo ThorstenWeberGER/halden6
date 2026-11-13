@@ -18,7 +18,7 @@ window.HaldenMapping = function (P) {
     ? ((P.bpm || 120) / 60) / TEMPO_BEATS[P.lfoTempo]
     : expMap(P.lfoRate, 0.1, 20);
   // Filter feedback for a resonance setting, as in halden6.dsp (junoVCF)
-  const resK = () => 4.2 * Math.pow(Math.sin(Math.PI / 2 * P.vcfRes), 1.5);
+  const resK = () => 4.3 * Math.pow(Math.sin(Math.PI / 2 * P.vcfRes), 2.2);
 
   // Faust control values, in the units halden6.dsp expects
   function dspValues() {

@@ -119,29 +119,35 @@ osc   = os.sawtooth(fm) * sawOn * 0.35
 note   = ba.hz2midikey(freq);
 fc     = cutoff * pow(2, (envAmt * env * vel + lfoFilt * lfo + kybd * (note - 60) * 100 + bendVcf) / 1200)
        : max(20) : min(18000);
-filt   = osc : junoVCF(fc, 4.2 * pow(sin(ma.PI / 2 * res), 1.5));
+filt   = osc : junoVCF(fc, 4.3 * pow(sin(ma.PI / 2 * res), 2.2));
 
 // Juno-60 style 4-pole low-pass: four identical one-pole stages (zero-delay
-// "TPT" form, exact at every cutoff) with feedback k from the output. The
-// feedback runs through a soft saturation, so the resonance grows as on the
-// Juno and self-oscillates at the top (k > 4) without blowing up.
-// The resonance curve k = 4.2 * sin(res * pi/2)^1.5 is fitted to Juno-60
-// recordings: about +2.5, +9, +16 and +18 dB at the resonant peak for
-// resonance 2.5, 5, 7.5 and 10. The saturation is solved on its tangent in
-// each sample, so the loop stays zero-delay and stable.
+// "TPT" form, exact at every cutoff) with feedback k from the output. As in
+// the Juno's circuit, part of the input (0.31, set there by the resistors
+// around the resonance amplifier) is fed into the feedback path. That keeps
+// the bass: full resonance costs about 7 dB instead of 14. The feedback runs
+// through a soft saturation, so the resonance grows as on the Juno and
+// self-oscillates at the top (k > 4, from about 8.5) without blowing up.
+// The resonance curve k = 4.3 * sin(res * pi/2)^2.2 fits two references at
+// once: Juno-60 recordings (+2.4, +9.3, +15.6, +17.6 dB at the peak for
+// resonance 2.5, 5, 7.5 and 10; measured +2.3, +9.9, +16.2, +17.8) and
+// hardware measurements of the feedback in the KR-106 project. The
+// saturation is solved on its tangent in each sample, so the loop stays
+// zero-delay and stable.
 junoVCF(fc, k, x) = loop ~ si.bus(4) : (!, !, !, !, _)
 with {
-  drive = 2;
+  drive = 3;
+  c  = 0.31;                                        // input share in the feedback path
   wc = tan(ma.PI * min(fc, 0.45 * ma.SR) / ma.SR);
   g  = wc / (1 + wc);
   G  = g * g * g * g;
   loop(s1, s2, s3, s4) = l1 + v1, l2 + v2, l3 + v3, l4 + v4, l4
   with {
     S     = g * g * g * (1 - g) * s1 + g * g * (1 - g) * s2 + g * (1 - g) * s3 + (1 - g) * s4;
-    ylin  = (G * x + S) / (1 + k * G);
-    t     = ma.tanh(drive * ylin);
+    e     = (G * x + S - c * x) / (1 + k * G);         // feedback signal y - c x, linear estimate
+    t     = ma.tanh(drive * e);
     slope = 1 - t * t;
-    u     = (x - k * (t / drive - slope * ylin) - k * slope * S) / (1 + k * slope * G);
+    u     = (x - k * (t / drive - slope * e) - k * slope * (S - c * x)) / (1 + k * slope * G);
     v1 = g * (u - s1);  l1 = v1 + s1;
     v2 = g * (l1 - s2); l2 = v2 + s2;
     v3 = g * (l2 - s3); l3 = v3 + s3;
@@ -171,14 +177,26 @@ hpfFreq    = hslider("hpf", 10, 10, 2000, 0.1) : sm;
 chorusMode = hslider("chorusMode", 1, 0, 3, 1);    // 0 off, 1 I, 2 II, 3 I+II
 
 softLimit(x) = x * (27 + x * x) / (27 + 9 * x * x);
+// The Juno-60's filters around its bucket-brigade delay chips: two resonant
+// Sallen-Key stages and one simple stage on each side, 5 poles in all. Corners
+// and Q as measured on a Juno-60 by Holters and Parker (DAFx 2018) and given
+// by the component values of the circuit (22k/22k with 820p/680p and 1n8/270p).
+// They roll off far more than one pole: about -38 dB at 15 kHz instead of -12.
+sk(f, q)  = fi.tf2s(0, 0, 1, 1 / q, 1, 2 * ma.PI * f);   // 2-pole low-pass, corner f, quality q
+pole(f)   = fi.lowpass(1, min(f, 0.45 * ma.SR));
+bbdIn     = sk(9691, 0.549) : sk(10344, 1.236) : pole(7413);
+bbdOut    = sk(8874, 0.542) : sk(10381, 1.241) : pole(28053);
 tri(f)       = (os.lf_triangle(f) + 1) / 2;         // unipolar triangle, like SimpleLFO::triangle_uni
 p1 = tri(0.513);                                    // chorus I rate
 p2 = tri(0.863);                                    // chorus II rate
 p3 = tri(9.75);                                     // I+II vibrato rate
 maxDelay = 1024;                                    // samples: the longest tap is 5.4 ms, 519 samples at 96 kHz
-tL(p) = (0.00154 + (0.00515 - 0.00154) * p) * ma.SR;
-tR(p) = (0.00151 + (0.00540 - 0.00151) * p) * ma.SR;
-tV(p) = (0.0033 + 0.0004 * p) * ma.SR;              // I+II: 3.3 to 3.7 ms
+// The measured delays are those of the whole chorus. The two filters above
+// delay the signal by about 0.115 ms themselves, so the delay line is shorter.
+filtDelay = 0.000115;
+tL(p) = (0.00154 - filtDelay + (0.00515 - 0.00154) * p) * ma.SR;
+tR(p) = (0.00151 - filtDelay + (0.00540 - 0.00151) * p) * ma.SR;
+tV(p) = (0.0033 - filtDelay + 0.0004 * p) * ma.SR;         // I+II: 3.3 to 3.7 ms in all
 gA  = ba.selectn(4, chorusMode, 0, 1, 0, 0);        // chorus I share
 gB  = ba.selectn(4, chorusMode, 0, 0, 1, 0);        // chorus II share
 gV  = chorusMode == 3;                              // I+II vibrato
@@ -190,15 +208,15 @@ wet = select2(on, 0, 1);                            // level: chorus on is about
 // Each chorus has a left tap swept by p and a right tap swept by 1-p
 chorus(x) = outL, outR
 with {
-  pre  = x : softLimit : fi.lowpass(1, 7375);       // pre-filter before the BBD
+  pre  = x : softLimit : bbdIn;                    // anti-alias filter before the BBD
   a1L  = de.fdelay(maxDelay, tL(p1), pre);
   a1R  = de.fdelay(maxDelay, tR(1 - p1), pre);
   a2L  = de.fdelay(maxDelay, tL(p2), pre);
   a2R  = de.fdelay(maxDelay, tR(1 - p2), pre);
   a3L  = de.fdelay(maxDelay, tV(p3), pre);
   a3R  = a3L;                                       // I+II is one vibrato on both sides
-  wL   = (a1L * gA + a2L * gB + a3L * gV + no.noises(2, 0) * hiss) : fi.lowpass(1, 10375);  // post-filter
-  wR   = (a1R * gA + a2R * gB + a3R * gV + no.noises(2, 1) * hiss) : fi.lowpass(1, 10375);
+  wL   = (a1L * gA + a2L * gB + a3L * gV + no.noises(2, 0) * hiss) : bbdOut;   // reconstruction filter
+  wR   = (a1R * gA + a2R * gB + a3R * gV + no.noises(2, 1) * hiss) : bbdOut;
   outL = x * dry + wL * wet;
   outR = x * dry + wR * wet;
 };

@@ -16,16 +16,20 @@ compiled to WebAssembly. No install, no server, no account.
 
 The voice is fitted to recordings of a real Juno-60 from Andy Harman's
 [Juno60 analysis](https://github.com/pendragon-andyh/Juno60) (MIT licence),
-and checked against them:
+and checked against them. Where the recordings leave gaps, the Juno-60
+circuit fills them: published component values and hardware measurements
+(see `THIRD-PARTY.md`).
 
-- **Filter**: a 4-pole low-pass whose resonance comes in early, peaks about
-  18 dB at the top and self-oscillates, as on the Juno. More resonance thins
-  the bass, as on the Juno.
+- **Filter**: a 4-pole low-pass whose resonance peaks about 18 dB at the top
+  and self-oscillates from about 8.5, as on the Juno. As in the Juno's
+  circuit, part of the input runs into the resonance path, so full resonance
+  costs about 7 dB of bass, not 14.
 - **Envelope**: curved like a charging capacitor, not straight lines.
 - **Oscillators**: saw, pulse and sub at the Juno's levels; noise rolled off
   above 5 kHz.
-- **Chorus**: I and II at the Juno's levels with its faint hiss; I+II is the
-  Juno's own fast vibrato.
+- **Chorus**: I and II at the Juno's levels with its faint hiss, between the
+  same steep 5-pole filters as the Juno's delay chips; I+II is the Juno's own
+  fast vibrato.
 - **HPF**: one pole, 6 dB per octave.
 
 ![The full Halden 6 panel in the Studio skin with the preset "PWM String Pad" loaded: Control, Chorus, LFO and DCO on the top row; Performance, HPF, VCF, VCA and ENV on the second row; the folded Arpeggiator bar and the keyboard below](docs/images/panel.png)
