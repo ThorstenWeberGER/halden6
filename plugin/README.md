@@ -37,7 +37,7 @@ not per Live set.
 
 ## Install
 
-See the install section of the main [README](../README.md#halden-6-in-ableton-live-vst3-plugin-windows).
+See the main [README](../README.md#the-plugin-for-ableton-live) and the [guide](../docs/guide.md#halden-6-in-ableton-live-vst3-plugin-windows).
 
 ## Releasing
 
