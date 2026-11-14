@@ -89,6 +89,15 @@ node plugin/tools/check.mjs                       # web vs plugin: mappings, sou
   is a short article; detail belongs in `docs/guide.md`.
 - No marketing words. State what was measured and how close it is.
 
+## Releasing a new version
+
+1. Raise the version in two places: the panel label in `index.html`
+   (`poly synth · v0.2`) and the default in `plugin/CMakeLists.txt`.
+2. Merge to `main`, then run Actions > Plugin > Run workflow on `main` with the
+   version, e.g. `0.2.0`. It publishes the release with the zip twice:
+   `Halden6-vst3-<version>.zip` and `Halden6-vst3-windows.zip` (the fixed name
+   behind the download link in the README and the portfolio post).
+
 ## Git
 
 - Work on the session branch; open a pull request into `main`.

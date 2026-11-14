@@ -41,8 +41,9 @@ See the main [README](../README.md#the-plugin-for-ableton-live) and the [guide](
 
 ## Releasing
 
-On GitHub open **Actions > Plugin > Run workflow**, choose `main` and enter the
-version, e.g. `0.1.1`. Or push a tag (`git tag v0.1.1 && git push origin v0.1.1`).
+First raise the version shown in the panel (`index.html`, "poly synth · v0.2")
+and the default in `CMakeLists.txt`. Then on GitHub open **Actions > Plugin >
+Run workflow**, choose `main` and enter the version, e.g. `0.2.0`. Or push a tag (`git tag v0.1.1 && git push origin v0.1.1`).
 
 GitHub Actions bakes that version into the plugin, builds on Windows, runs
 pluginval and the checks, creates the tag if needed, and publishes
