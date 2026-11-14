@@ -119,3 +119,7 @@ jobs:
             gh release create "$tag" "$zip" --target "$GITHUB_SHA" \
               --repo "$GITHUB_REPOSITORY" --title "Halden 6 $tag" --generate-notes
           fi
+          # The same zip under a fixed name, so one link always gets the newest release:
+          # https://github.com/<owner>/<repo>/releases/latest/download/Halden6-vst3-windows.zip
+          cp "$zip" Halden6-vst3-windows.zip
+          gh release upload "$tag" Halden6-vst3-windows.zip --clobber --repo "$GITHUB_REPOSITORY"
