@@ -9,6 +9,9 @@ plugin in Ableton Live.**
 Play it now: **https://thorstenweberger.github.io/halden6/** Tap once to
 start the sound, then play the keys.
 
+Plugin for Ableton Live on Windows:
+**[Download Halden6-vst3-windows.zip](https://github.com/ThorstenWeberGER/halden6/releases/latest/download/Halden6-vst3-windows.zip)**
+
 ## Why I built it
 
 I love synthesizers. The Juno-60 is one of my favourites: a simple voice, a
@@ -99,8 +102,8 @@ The plugin runs on Windows 11 (or Windows 10 with the WebView2 Runtime).
 
 **The quick way: download it.**
 
-1. Download `Halden6-vst3-<version>.zip` from the
-   [releases page](https://github.com/ThorstenWeberGER/halden6/releases).
+1. [Download the newest version](https://github.com/ThorstenWeberGER/halden6/releases/latest/download/Halden6-vst3-windows.zip).
+   Older versions are on the [releases page](https://github.com/ThorstenWeberGER/halden6/releases).
 2. Close Live. Copy the `Halden 6.vst3` folder from the zip to
    `C:\Program Files\Common Files\VST3`.
 

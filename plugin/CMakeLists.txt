@@ -4,7 +4,7 @@
 cmake_minimum_required(VERSION 3.22)
 # The version baked into the plugin. Releases set it from the release button
 # or the tag (cmake -DHALDEN6_VERSION=x.y.z); this default is for local builds.
-set(HALDEN6_VERSION "0.1.0" CACHE STRING "Plugin version, x.y.z")
+set(HALDEN6_VERSION "0.2.0" CACHE STRING "Plugin version, x.y.z")
 if(NOT HALDEN6_VERSION MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+$")
   message(FATAL_ERROR "HALDEN6_VERSION must look like 1.2.3, not '${HALDEN6_VERSION}'")
 endif()
